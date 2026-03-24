@@ -1,7 +1,4 @@
-/**
- * core.js - Core Application Logic
- * 核心应用逻辑：数据加载/保存、消息渲染、会话管理等
- */
+/*核心应用逻辑：数据加载保存、消息渲染、会话管理等*/
 
         function clearAllAppData() {
     const overlay = document.createElement('div');
@@ -37,7 +34,16 @@
         closeDialog();
         if (confirm('确定要清除当前会话的所有消息吗？此操作无法恢复！')) {
             messages = [];
-            throttledSaveData();
+            window.messages = messages; // 双保险：同步 window 属性
+            displayedMessageCount = HISTORY_BATCH_SIZE;
+
+            // 立即清除 localStorage 备份，防止 _tryRecoverFromBackup 在 IndexedDB 写入前恢复旧消息
+            try { localStorage.removeItem('BACKUP_V1_critical'); } catch(e) {}
+            try { localStorage.removeItem('BACKUP_V1_timestamp'); } catch(e) {}
+
+            // 直接写入 IndexedDB（跳过 500ms 防抖），确保刷新后不恢复
+            localforage.setItem(getStorageKey('chatMessages'), []).catch(() => {});
+
             renderMessages();
             showNotification('当前会话消息已清除', 'success');
         }
@@ -245,18 +251,16 @@ const loadData = async () => {
         const savedMyStickers = getVal(17);
         const savedReplyGroups = getVal(18);
 
-        if (savedPartnerPersonas) partnerPersonas = savedPartnerPersonas; 
-
-        if (savedShowNameConfig !== null) {
-            showPartnerNameInChat = savedShowNameConfig;
-            document.body.classList.toggle('show-partner-name', showPartnerNameInChat);
-        }
+        if (savedPartnerPersonas) partnerPersonas = savedPartnerPersonas;
 
         if (savedSettings) Object.assign(settings, savedSettings);
+
         if (settings.showPartnerNameInChat !== undefined) {
             showPartnerNameInChat = settings.showPartnerNameInChat;
-            document.body.classList.toggle('show-partner-name', showPartnerNameInChat);
+        } else if (savedShowNameConfig !== null) {
+            showPartnerNameInChat = savedShowNameConfig;
         }
+        document.body.classList.toggle('show-partner-name', showPartnerNameInChat);
         try {
             if (settings.customFontUrl) applyCustomFont(settings.customFontUrl);
             if (settings.customBubbleCss) applyCustomBubbleCss(settings.customBubbleCss);
@@ -343,6 +347,9 @@ const loadData = async () => {
             manageAutoSendTimer(); 
             checkEnvelopeStatus(); 
             updateUI();
+            if (settings.customBubbleCss) {
+                try { applyCustomBubbleCss(settings.customBubbleCss); } catch(e) {}
+            }
         }, 100);
 
     } catch (e) {
@@ -536,7 +543,6 @@ const saveData = async () => {
 };
 
         function initializeRandomUI() {
-            // getRandomItem is now a global function in utils.js
 
 
             document.querySelector('.header-motto').textContent = getRandomItem(CONSTANTS.HEADER_MOTTOS);
@@ -737,8 +743,6 @@ function manageAutoSendTimer() {
             DOMElements.themeToggle.innerHTML = settings.isDarkMode ? '<i class="fas fa-sun"></i>': '<i class="fas fa-moon"></i>';
             DOMElements.partner.name.textContent = settings.partnerName;
             DOMElements.me.name.textContent = settings.myName;
-            // Bug Fix #3: 不在 updateUI 里随机化状态（每次切换主题都会乱改状态）
-            // 状态变更只在 checkStatusChange() 和 loadData() 中发生
             DOMElements.partner.status.textContent = settings.partnerStatus || '在线';
             DOMElements.me.statusText.textContent = settings.myStatus;
             if (typeof window.updateDynamicNames === 'function') window.updateDynamicNames();
@@ -770,7 +774,6 @@ function manageAutoSendTimer() {
                 item.classList.toggle('active', item.dataset.bubbleStyle === settings.bubbleStyle);
             });
 
-            // Sync setting pill toggles
             const _pillSyncMap = {
                 '#reply-toggle': 'replyEnabled',
                 '#sound-toggle': 'soundEnabled',
@@ -819,13 +822,11 @@ function manageAutoSendTimer() {
                 return false;
             };
             if (!tryScroll()) {
-                // Message not rendered yet - check if it exists in messages array
                 const msgIndex = messages.findIndex(m => String(m.id) === String(id));
                 if (msgIndex === -1) {
                     if (typeof showNotification === 'function') showNotification('消息可能已被删除', 'info');
                     return;
                 }
-                // Load enough messages to include this one
                 const needed = messages.length - msgIndex;
                 if (needed > displayedMessageCount) {
                     displayedMessageCount = needed;
@@ -882,6 +883,21 @@ function manageAutoSendTimer() {
                     systemMsgDiv.className = 'system-message';
                     systemMsgDiv.innerHTML = msg.text;
                     fragment.appendChild(systemMsgDiv);
+                    lastSender = 'system';
+                    return;
+                }
+
+                if (msg.type === 'call-event') {
+                    const callEvDiv = document.createElement('div');
+                    callEvDiv.className = 'call-event-message';
+                    callEvDiv.dataset.id = msg.id;
+                    const icon = msg.callIcon || 'fa-video';
+                    const isEnded = icon === 'fa-video';
+                    const isRejected = icon === 'fa-phone-slash';
+                    const colorClass = isRejected ? 'call-event-pill--rejected' : 'call-event-pill--ended';
+                    const detail = msg.callDetail ? `<span class="call-event-detail">${msg.callDetail}</span>` : '';
+                    callEvDiv.innerHTML = `<div class="call-event-pill ${colorClass}"><i class="fas ${icon} call-event-icon"></i><span class="call-event-label">${msg.text.replace(/ · .*/, '')}</span>${detail}<button class="call-event-delete" title="删除" onclick="(function(btn){const id=btn.closest('[data-id]').dataset.id;const idx=messages.findIndex(m=>String(m.id)===String(id));if(idx>-1){messages.splice(idx,1);renderMessages();throttledSaveData();}})(this)"><i class="fas fa-times"></i></button></div>`;
+                    fragment.appendChild(callEvDiv);
                     lastSender = 'system';
                     return;
                 }
@@ -972,7 +988,6 @@ function manageAutoSendTimer() {
                     if (!isSameSenderGroupForName) contentWrapper.appendChild(nameLabel);
                 } else if (!groupMember && msg.sender !== 'user' && msg.sender !== null &&
                            (settings.showPartnerNameInChat || showPartnerNameInChat)) {
-                    // Single mode: show partner name when the option is enabled and sender changes
                     const isSameSenderForName = lastSender === msg.sender;
                     if (!isSameSenderForName) {
                         const nameLabel = document.createElement('div');
@@ -1096,6 +1111,21 @@ actionsHTML += `<button class="meta-action-btn delete-btn" title="删除"><i cla
             throttledSaveData();
         };
 
+        window._addCallEvent = (icon, label, detail) => {
+            addMessage({
+                id: Date.now() + Math.random(),
+                sender: 'system',
+                text: label + (detail ? ' · ' + detail : ''),
+                timestamp: new Date(),
+                status: 'received',
+                type: 'call-event',
+                callIcon: icon || 'fa-video',
+                callDetail: detail || null,
+                favorited: false,
+                note: null,
+            });
+        };
+
         function optimizeImage(file, maxWidth = 800, quality = 0.7) {
             return new Promise((resolve, reject) => {
                 if (file.size < 300 * 1024) {
@@ -1191,10 +1221,9 @@ if (!isBatchMode && type === 'normal') {
     const delayRange = settings.replyDelayMax - settings.replyDelayMin;
     const randomDelay = settings.replyDelayMin + Math.random() * delayRange;
 
-    // Determine read-no-reply FIRST, before showing any typing indicator
     const shouldIgnore = settings.allowReadNoReply && (Math.random() < 0.5);
 
-    // Mark messages as read after short delay (always happens — that's the "read" part)
+    const readDelay = 1500 + Math.random() * 2500;
     setTimeout(() => {
         let changed = false;
         messages.forEach(msg => {
@@ -1204,14 +1233,12 @@ if (!isBatchMode && type === 'normal') {
             }
         });
         if (changed) { renderMessages(false); throttledSaveData(); }
-    }, 400);
+    }, readDelay);
 
-    // Cancel any pending reply timer and reset it (so rapid messages don't stack replies)
     if (window._pendingReplyTimer) clearTimeout(window._pendingReplyTimer);
     window._pendingReplyTimer = null;
 
     if (!shouldIgnore) {
-        // Only show typing indicator when we're actually going to reply
         if (settings.typingIndicatorEnabled) {
             const tiWrapper = document.getElementById('typing-indicator-wrapper');
             const tiLabel = document.getElementById('typing-indicator-label');
@@ -1229,7 +1256,6 @@ if (!isBatchMode && type === 'normal') {
             simulateReply();
         }, randomDelay);
     }
-    // If shouldIgnore: no typing indicator, no reply — messages stay "read" with no response
 }
 };
 
@@ -1290,7 +1316,6 @@ if (!isBatchMode && type === 'normal') {
         <button class="batch-action-btn batch-send-btn" ${batchMessages.length === 0 ? 'disabled': ''}>发送全部 (${batchMessages.length})</button>
         </div>`;
 
-            // Wire image upload
             const batchImgInput = document.getElementById('batch-image-input');
             if (batchImgInput) {
                 batchImgInput.addEventListener('change', async (e) => {
@@ -1370,7 +1395,6 @@ if (!isBatchMode && type === 'normal') {
                 renderMessages(false); throttledSaveData();
             }
 
-            // Don't call showTypingIndicator() a second time — already shown by sendMessage
 if (partnerPersonas && partnerPersonas.length > 0 && Math.random() < 0.3) {
                 const currentPool = [
                     ...partnerPersonas
@@ -1439,14 +1463,12 @@ if (partnerPersonas && partnerPersonas.length > 0 && Math.random() < 0.3) {
                 const delayRange = settings.replyDelayMax - settings.replyDelayMin;
                 delay += settings.replyDelayMin + Math.random() * delayRange;
                 setTimeout(() => {
-                    // Filter disabled individual items AND items from disabled groups
                     let disabledItems = new Set();
                     try {
                         const raw = localStorage.getItem('disabledReplyItems');
                         if (raw) disabledItems = new Set(JSON.parse(raw));
                     } catch(e) {}
 
-                    // Build disabled-group items by iterating disabled groups directly (more reliable)
                     const disabledGroupItems = new Set();
                     const _groups = window.customReplyGroups || [];
                     _groups.forEach(g => {
@@ -1458,12 +1480,11 @@ if (partnerPersonas && partnerPersonas.length > 0 && Math.random() < 0.3) {
                     const replyPool = customReplies.filter(r => !disabledItems.has(r) && !disabledGroupItems.has(r));
                     const replyText = replyPool[Math.floor(Math.random() * replyPool.length)];
 
-                    // Bug fix 2: 30% chance partner sends a sticker image instead of (or after) text
-                    const shouldSendSticker = stickerLibrary && stickerLibrary.length > 0 && Math.random() < 0.3;
+                    const shouldSendSticker = stickerLibrary && stickerLibrary.length > 0 && Math.random() < 0.2;
 
                     let finalText = replyText;
                     let separateEmoji = null;
-                    if (!shouldSendSticker && customEmojis && customEmojis.length > 0 && Math.random() < 0.3) {
+                    if (customEmojis && customEmojis.length > 0 && Math.random() < 0.2) {
                         const emoji = customEmojis[Math.floor(Math.random() * customEmojis.length)];
                         if (settings.emojiMixEnabled !== false) {
                             finalText = Math.random() < 0.5
@@ -1487,14 +1508,11 @@ if (partnerPersonas && partnerPersonas.length > 0 && Math.random() < 0.3) {
                             : null,
                         type: 'normal'
                     });
-                    // Bug fix 4: Send background push notification
                     if (typeof window._sendPartnerNotification === 'function') {
                         window._sendPartnerNotification(settings.partnerName || '对方', finalText);
                     }
-                    // Bug fix 5: Play sound for incoming message
                     playSound('message');
 
-                    // Bug fix 2 (continued): send the sticker as a follow-up image message
                     if (shouldSendSticker) {
                         const randomSticker = stickerLibrary[Math.floor(Math.random() * stickerLibrary.length)];
                         setTimeout(() => {

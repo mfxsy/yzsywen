@@ -1,7 +1,4 @@
-/**
- * config.js - App Constants & Data Structures
- * 应用常量与数据结构
- */
+/*应用常量与数据结构*/
 
         const APP_PREFIX = 'CHAT_APP_V3_';
         const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -344,5 +341,4 @@
             ]
         };
 
-// Make key constants globally accessible for inline scripts
 window.APP_PREFIX = APP_PREFIX;

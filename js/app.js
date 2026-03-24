@@ -1,8 +1,3 @@
-/**
- * app.js - Application Entry Point
- * 应用初始化与主入口
- */
-
 document.addEventListener('DOMContentLoaded', async () => {
     const loaderBar = document.getElementById('loader-tech-bar');
     const welcomeSubtitle = document.querySelector('.welcome-subtitle-scramble');
@@ -33,10 +28,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     try {
-        // Bug Fix #4: 移除未被 await 的并行初始化
-        // 原先这些函数在 Promise.all 中"发射后不管"，
-        // 之后 loadData() 内部又各自初始化一次，导致事件绑定重复。
-        // 改为在 loadData 完成后统一执行。
         try { setupEventListeners?.(); } catch(e) { console.error('setupEventListeners:', e); }
 
         if (typeof localforage === 'undefined') {
@@ -64,22 +55,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!tourSeen) {
                 showModal(disclaimerModal);
                 
-                if (acceptDisclaimerBtn) {
+                if (acceptDisclaimerBtn && !acceptDisclaimerBtn._bound) {
+                    acceptDisclaimerBtn._bound = true;
                     acceptDisclaimerBtn.addEventListener('click', () => {
                         hideModal(disclaimerModal);
+                        localforage?.setItem(APP_PREFIX + 'tour_seen', true).catch(() => {});
                         startTour?.();
-                    }, { once: true }); 
+                    }, { once: true });
                 }
             }
-        }
-        
-        if (acceptDisclaimerBtn && !acceptDisclaimerBtn._closeFixed) {
-            acceptDisclaimerBtn._closeFixed = true;
-            acceptDisclaimerBtn.addEventListener('click', () => {
-                if (disclaimerModal && disclaimerModal.style.display !== 'none') {
-                    hideModal(disclaimerModal);
-                }
-            });
         }
 
         updateLoader('连接成功，欢迎回来。', '100%');
@@ -121,7 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 try {
                     const permission = await Notification.requestPermission();
                     if (permission === 'granted') {
-                        showNotification('已开启系统通知，收到消息时会提醒你 ✨', 'success', 3000);
+                        showNotification('已开启系统通知，收到消息时会提醒你', 'success', 3000);
                     }
                 } catch(e) {
                     console.warn('通知权限请求失败:', e);

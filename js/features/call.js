@@ -1,9 +1,3 @@
-/**
- * call.js v5.0
- * Fix: avatar/pulse offset (explicit px sizes, no clamp %), pill drag
- * Note: data-modal redesign is now in data-modal.js
- */
-
 (function () {
     'use strict';
 
@@ -37,7 +31,6 @@
 
     const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-    /* ── BG ─────────────────────────────────────────────────── */
     function loadBg() {
         if (!window.localforage) return;
         localforage.getItem(BG_LF_KEY).then(v => { if (v) { S.bgImage = v; applyBg(); } }).catch(() => {});
@@ -47,19 +40,16 @@
         localforage.setItem(BG_LF_KEY, d).catch(() => {});
     }
 
-    /* ── SVG hangup ─────────────────────────────────────────── */
     const SVG_HU = `<svg viewBox="0 0 24 24" fill="none" style="display:block;width:100%;height:100%;">
   <path d="M6.6 10.8c1.4 2.8 3.7 5.1 6.5 6.5l2.2-2.2c.28-.27.68-.36 1.03-.24 1.1.37 2.3.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.56 21 3 13.44 3 4c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.28.2 2.5.57 3.57.11.35.03.74-.24 1.02L6.6 10.8z" fill="white"/>
   <line x1="21" y1="3" x2="3" y2="21" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
 </svg>`;
 
-    /* ── CSS ─────────────────────────────────────────────────── */
     function injectCSS() {
         if (document.getElementById('call-feature-style')) return;
         const el = document.createElement('style');
         el.id = 'call-feature-style';
         el.textContent = `
-/* ═══ INCOMING ═══════════════════════════════════════════ */
 #call-incoming-overlay{
     position:fixed;inset:0;z-index:99990;
     display:none;align-items:center;justify-content:center;
@@ -81,7 +71,6 @@
     content:'';position:absolute;inset:0;pointer-events:none;
     background:radial-gradient(ellipse at 50% 0%,rgba(var(--accent-color-rgb,224,105,138),.28),transparent 65%);
 }
-/* incoming ring */
 .call-inc-ring{position:relative;margin-bottom:8px;width:88px;height:88px;}
 .call-inc-ring::before,.call-inc-ring::after{
     content:'';position:absolute;
@@ -117,7 +106,6 @@
 .call-inc-accept .call-inc-circle{background:linear-gradient(135deg,#4caf50,#2e7d32);box-shadow:0 6px 20px rgba(76,175,80,.45);padding:18px;}
 .call-inc-lbl{font-size:12px;color:rgba(255,255,255,.48);font-weight:500;}
 
-/* ═══ CALL WINDOW ═══════════════════════════════════════ */
 #call-window{
     position:fixed;z-index:99900;
     border-radius:22px;overflow:visible;
@@ -134,7 +122,6 @@
     flex:1;display:flex;flex-direction:column;position:relative;
 }
 
-/* Background */
 #call-window-bg{position:absolute;inset:0;z-index:0;}
 .call-bg-grad{position:absolute;inset:0;background:linear-gradient(155deg,#0d1b2a 0%,#1b263b 50%,#415a77 100%);}
 #call-window-bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;}
@@ -147,7 +134,6 @@
     background:linear-gradient(to bottom,rgba(0,0,0,.5) 0%,rgba(0,0,0,.04) 35%,rgba(0,0,0,.04) 60%,rgba(0,0,0,.65) 100%);
 }
 
-/* Header */
 #call-window-header{
     position:relative;z-index:10;
     display:flex;align-items:center;justify-content:space-between;
@@ -178,7 +164,6 @@
 }
 .call-top-btn:hover{background:rgba(255,255,255,.22);transform:scale(1.08);}
 
-/* Connecting state */
 #call-connecting-state{
     position:relative;z-index:10;
     display:none;flex-direction:column;align-items:center;
@@ -193,27 +178,18 @@
 .call-conn-dots span:nth-child(2){animation-delay:.15s;}
 .call-conn-dots span:nth-child(3){animation-delay:.3s;}
 
-/* ─────────────────────────────────────────────────────────
-   AVATAR + PULSE — THE FIX:
-   .call-av-wrap has EXPLICIT pixel width/height = avatar size
-   Pulse rings use top/left/right/bottom = -Npx (NOT inset shorthand)
-   to ensure correct cross-browser behavior.
-   Avatar uses fixed px, NOT clamp with % units.
-───────────────────────────────────────────────────────── */
 #call-window-body{
     position:relative;z-index:10;
     flex:1;display:flex;flex-direction:column;
     align-items:center;justify-content:center;
     gap:10px;padding:4px 12px;
 }
-/* Wrapper must have explicit size = avatar size */
 .call-av-wrap{
     position:relative;
-    width:68px;height:68px;  /* matches .call-avatar */
+    width:68px;height:68px;  
     flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
 }
-/* Pulse ring 1 — 10px bigger on each side */
 .call-av-pulse{
     position:absolute;
     top:-10px;left:-10px;right:-10px;bottom:-10px;
@@ -222,7 +198,6 @@
     animation:cAp 2.5s ease-in-out infinite;
     pointer-events:none;
 }
-/* Pulse ring 2 — 18px bigger on each side */
 .call-av-pulse2{
     position:absolute;
     top:-18px;left:-18px;right:-18px;bottom:-18px;
@@ -231,7 +206,6 @@
     animation:cAp 2.5s ease-in-out infinite .65s;
     pointer-events:none;
 }
-/* Avatar — fixed 68px square */
 .call-avatar{
     width:68px;height:68px;
     border-radius:50%;
@@ -240,7 +214,7 @@
     overflow:hidden;
     display:flex;align-items:center;justify-content:center;
     box-shadow:0 6px 22px rgba(0,0,0,.4);
-    position:relative;z-index:1;  /* above pulse rings */
+    position:relative;z-index:1;  
     flex-shrink:0;
 }
 .call-avatar img{width:100%;height:100%;object-fit:cover;}
@@ -260,7 +234,6 @@
 .call-wave span:nth-child(4){height:13px;animation-delay:.3s;}
 .call-wave span:nth-child(5){height:6px;animation-delay:.4s;}
 
-/* Same fix for connecting state avatar */
 #call-connecting-state .call-av-wrap{
     width:68px;height:68px;
 }
@@ -268,7 +241,6 @@
     width:68px;height:68px;
 }
 
-/* Controls */
 #call-window-controls{
     position:relative;z-index:10;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
@@ -286,7 +258,6 @@
 .call-hangup-btn:hover{transform:scale(1.1);box-shadow:0 10px 28px rgba(255,82,82,.6);}
 .call-hangup-btn:active{transform:scale(.9);}
 
-/* Util buttons */
 .call-util-btn{
     position:absolute;z-index:10;
     width:28px;height:28px;border-radius:50%;border:none;
@@ -301,7 +272,6 @@
 #call-immersive-btn{bottom:70px;left:10px;}
 #call-bg-file-input{display:none;}
 
-/* IMMERSIVE */
 #call-window.immersive #call-window-header,
 #call-window.immersive #call-window-body,
 #call-window.immersive #call-connecting-state,
@@ -311,7 +281,6 @@
 #call-window.immersive #call-immersive-btn{opacity:.35 !important;pointer-events:all !important;}
 #call-window.immersive #call-immersive-btn:hover{opacity:1 !important;}
 
-/* Resize handle */
 #call-resize-handle{
     position:absolute;bottom:-2px;right:-2px;z-index:99901;
     width:22px;height:22px;cursor:se-resize;
@@ -325,7 +294,6 @@
     border-radius:0 0 4px 0;
 }
 
-/* Size presets */
 #call-size-presets{
     position:fixed;z-index:99960;
     display:none;flex-direction:column;gap:2px;
@@ -343,7 +311,6 @@
 .call-size-btn:hover{background:rgba(255,255,255,.1);color:#fff;}
 .call-size-btn i{color:var(--accent-color,#e0698a);width:12px;}
 
-/* ═══ MINI PILL ══════════════════════════════════════════ */
 #call-mini-pill{
     position:fixed;bottom:82px;right:16px;z-index:99901;
     display:none;align-items:center;gap:9px;
@@ -374,15 +341,13 @@
 }
 .call-mini-hangup:hover{background:#ff5252;transform:scale(1.12);}
 
-/* ═══ TOOLBAR BUTTON ════════════════════════════════════ */
 #call-toolbar-btn{
-    background-color:var(--message-received-bg) !important;
-    color:var(--text-secondary) !important;
+    background-color:var(--toolbar-btn-bg, var(--message-received-bg)) !important;
+    color:var(--toolbar-btn-color, var(--text-secondary)) !important;
 }
 #call-toolbar-btn:hover{color:var(--text-primary) !important;}
 body.bottom-collapse-mode #call-toolbar-btn{display:none !important;}
 
-/* ═══ BLACK-WHITE DARK THEME FIX ════════════════════════ */
 html[data-theme="dark"][data-color-theme="black-white"]{
     --accent-color: #c0c0c0;
     --accent-color-rgb: 192,192,192;
@@ -394,7 +359,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
     color: #ffffff !important;
 }
 
-/* ═══ KEYFRAMES ══════════════════════════════════════════ */
 @keyframes cFi{from{opacity:0}to{opacity:1}}
 @keyframes cCu{from{opacity:0;transform:translateY(28px) scale(.94)}to{opacity:1;transform:none}}
 @keyframes cWi{from{opacity:0;transform:scale(.84) translateY(18px)}to{opacity:1;transform:none}}
@@ -409,13 +373,11 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         document.head.appendChild(el);
     }
 
-    /* ── HTML ─────────────────────────────────────────────── */
     function injectHTML() {
         if (document.getElementById('call-feature-root')) return;
         const root = document.createElement('div');
         root.id = 'call-feature-root';
         root.innerHTML = `
-<!-- INCOMING -->
 <div id="call-incoming-overlay">
   <div class="call-inc-card">
     <div class="call-inc-ring">
@@ -440,7 +402,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
   </div>
 </div>
 
-<!-- CALL WINDOW -->
 <div id="call-window">
   <div id="call-window-inner">
     <div id="call-window-bg">
@@ -497,7 +458,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
   <div id="call-resize-handle"></div>
 </div>
 
-<!-- SIZE PRESETS -->
 <div id="call-size-presets">
   <button class="call-size-btn" data-w="160" data-h="240"><i class="fas fa-compress-alt"></i>迷你</button>
   <button class="call-size-btn" data-w="220" data-h="350"><i class="fas fa-minus-square"></i>小</button>
@@ -505,7 +465,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
   <button class="call-size-btn" data-w="360" data-h="560"><i class="fas fa-expand"></i>大</button>
 </div>
 
-<!-- MINI PILL -->
 <div id="call-mini-pill">
   <div class="call-mini-av" id="call-mini-av"><i class="fas fa-user" id="call-mini-av-icon"></i></div>
   <div class="call-mini-info">
@@ -519,7 +478,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         document.body.appendChild(root);
     }
 
-    /* ── Toolbar button ───────────────────────────────────── */
     function injectToolbarBtn() {
         if (document.getElementById('call-toolbar-btn')) return;
         const anchor = document.getElementById('attachment-btn');
@@ -538,7 +496,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         anchor.parentNode.insertBefore(btn, anchor);
     }
 
-    /* ── Helpers ──────────────────────────────────────────── */
     function fmt(ms) {
         const s = Math.floor(ms / 1000), m = Math.floor(s / 60), h = Math.floor(m / 60);
         return h > 0
@@ -559,7 +516,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
     }
     function fillNm(id) { const e = document.getElementById(id); if (e) e.textContent = getName(); }
 
-    /* ── Timer ────────────────────────────────────────────── */
     function tick() {
         if (!S.active || !S.startTime) return;
         S.elapsed = Date.now() - S.startTime;
@@ -600,19 +556,26 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         pill.style.right  = 'auto'; pill.style.bottom = 'auto';
     }
 
-    /* ── Send chat message ────────────────────────────────── */
-    function sendCallMsg(dur) {
-        if (dur < 2000) return;
-        const input = document.getElementById('message-input');
-        const send  = document.getElementById('send-btn');
-        if (!input || !send) return;
-        const prev = input.value;
-        input.value = `📹 视频通话已结束 · ${fmt(dur)}`;
-        send.click();
-        setTimeout(() => { if (input.value === input.value) {} }, 80);
+    function sendCallEvent(icon, label, detail) {
+        if (typeof window._addCallEvent === 'function') {
+            window._addCallEvent(icon, label, detail);
+        } else {
+            let tries = 0;
+            const t = setInterval(() => {
+                if (typeof window._addCallEvent === 'function') {
+                    clearInterval(t);
+                    window._addCallEvent(icon, label, detail);
+                }
+                if (++tries > 25) clearInterval(t);
+            }, 200);
+        }
     }
 
-    /* ── Start / End ──────────────────────────────────────── */
+    function sendCallMsg(dur) {
+        if (dur < 2000) return;
+        sendCallEvent('fa-video', '视频通话已结束', fmt(dur));
+    }
+
     function startCall(isPartner) {
         if (!S.enabled) return;
         S.active = true; S.startTime = null; S.elapsed = 0;
@@ -633,13 +596,39 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         if (timerEl) timerEl.textContent = '连接中';
 
         clearTimeout(S.connectingTimer);
-        S.connectingTimer = setTimeout(() => {
-            if (!S.active) return;
-            S.startTime = Date.now();
-            if (conn) conn.classList.remove('visible');
-            if (body) body.style.display = '';
-            tick();
-        }, 1400 + Math.random() * 1400);
+
+        if (!isPartner && Math.random() < 0.35) {
+            const rejectDelay = 4000 + Math.random() * 8000;
+            S.connectingTimer = setTimeout(() => {
+                if (!S.active) return;
+                S.active = false;
+                cancelAnimationFrame(S.timerRAF);
+                const winEl = document.getElementById('call-window');
+                if (winEl) { winEl.classList.remove('visible'); winEl.classList.remove('immersive'); }
+                const connEl = document.getElementById('call-connecting-state');
+                if (connEl) connEl.classList.remove('visible');
+                const bodyEl = document.getElementById('call-window-body');
+                if (bodyEl) bodyEl.style.display = '';
+                const rejectLabels = [
+                    getName() + ' 未接听',
+                    getName() + ' 正在忙，无法接听',
+                    getName() + ' 拒绝了通话',
+                    getName() + ' 暂时无法接听',
+                ];
+                const lbl = rejectLabels[Math.floor(Math.random() * rejectLabels.length)];
+                sendCallEvent('fa-phone-slash', lbl, null);
+                if (typeof showNotification === 'function')
+                    showNotification(lbl, 'info', 3000);
+            }, rejectDelay);
+        } else {
+            S.connectingTimer = setTimeout(() => {
+                if (!S.active) return;
+                S.startTime = Date.now();
+                if (conn) conn.classList.remove('visible');
+                if (body) body.style.display = '';
+                tick();
+            }, 1400 + Math.random() * 1400);
+        }
     }
 
     function endCall() {
@@ -666,9 +655,10 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         sendCallMsg(dur);
         if (typeof showNotification === 'function' && dur > 1500)
             showNotification(`通话结束 · ${fmt(dur)}`, 'info', 3000);
+        else if (typeof showNotification === 'function' && dur <= 1500 && dur > 0)
+            showNotification('通话已挂断', 'info', 2000);
     }
 
-    /* ── Incoming ─────────────────────────────────────────── */
     function showIncomingCall() {
         if (!S.enabled || S.active) return;
         const ov = document.getElementById('call-incoming-overlay');
@@ -676,7 +666,32 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         fillAv('call-inc-avatar'); fillNm('call-inc-name');
         ov.classList.add('visible');
         clearTimeout(S.incomingTimer);
-        S.incomingTimer = setTimeout(() => ov.classList.remove('visible'), 22000);
+
+        const autoRejectChance = 0.30;
+        if (Math.random() < autoRejectChance) {
+            const rejectDelay = 4000 + Math.random() * 6000;
+            S.incomingTimer = setTimeout(() => {
+                if (!ov.classList.contains('visible')) return;
+                ov.classList.remove('visible');
+                const myName = (typeof settings !== 'undefined' && settings.myName) || '我';
+                const partnerName = getName();
+                const rejectLabels = [
+                    `${partnerName} 的来电，${myName}未接听`,
+                    `${myName}拒绝了 ${partnerName} 的通话`,
+                    `错过了 ${partnerName} 的来电`,
+                    `${myName}暂时无法接听 ${partnerName} 的通话`,
+                ];
+                const label = rejectLabels[Math.floor(Math.random() * rejectLabels.length)];
+                sendCallEvent('fa-phone-slash', label, null);
+            }, rejectDelay);
+        } else {
+            S.incomingTimer = setTimeout(() => {
+                if (!ov.classList.contains('visible')) return;
+                ov.classList.remove('visible');
+                const myName = (typeof settings !== 'undefined' && settings.myName) || '我';
+                sendCallEvent('fa-phone-slash', `${myName}未接听 ${getName()} 的来电`, null);
+            }, 22000);
+        }
     }
 
     function scheduleRandomCall() {
@@ -689,7 +704,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         }, ms);
     }
 
-    /* ── Minimize / Restore ───────────────────────────────── */
     function minimizeWindow() {
         S.minimized = true;
         document.getElementById('call-window')?.classList.remove('visible');
@@ -703,7 +717,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         document.getElementById('call-mini-pill')?.classList.remove('visible');
     }
 
-    /* ── Immersive ────────────────────────────────────────── */
     function toggleImmersive() {
         S.immersive = !S.immersive;
         document.getElementById('call-window')?.classList.toggle('immersive', S.immersive);
@@ -714,7 +727,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         }
     }
 
-    /* ── Size presets ─────────────────────────────────────── */
     function openSizePresets() {
         const p = document.getElementById('call-size-presets');
         const b = document.getElementById('call-size-preset-toggle');
@@ -725,7 +737,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         p.classList.add('open');
     }
 
-    /* ── Drag: window ─────────────────────────────────────── */
     function initDrag() {
         const hdr = document.getElementById('call-window-header');
         const win = document.getElementById('call-window');
@@ -755,7 +766,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         hdr.addEventListener('pointercancel', stop);
     }
 
-    /* ── Drag: mini pill ──────────────────────────────────── */
     function initPillDrag() {
         const pill = document.getElementById('call-mini-pill');
         if (!pill) return;
@@ -789,7 +799,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         pill.addEventListener('pointercancel', stop);
     }
 
-    /* ── Resize ───────────────────────────────────────────── */
     function initResize() {
         const h = document.getElementById('call-resize-handle');
         const win = document.getElementById('call-window');
@@ -817,21 +826,18 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         h.addEventListener('pointercancel', stop);
     }
 
-    /* ── Bind all events ──────────────────────────────────── */
     function bindEvents() {
-        // Incoming
         document.getElementById('call-inc-reject')?.addEventListener('click', () => {
             document.getElementById('call-incoming-overlay')?.classList.remove('visible');
             clearTimeout(S.incomingTimer);
-            const i = document.getElementById('message-input'), sb = document.getElementById('send-btn');
-            if (i && sb) { i.value = `📵 已拒绝 ${getName()} 的视频通话`; sb.click(); }
+            const myName = (typeof settings !== 'undefined' && settings.myName) || '我';
+            sendCallEvent('fa-phone-slash', `${myName}拒绝了 ${getName()} 的通话`, null);
         });
         document.getElementById('call-inc-accept')?.addEventListener('click', () => {
             document.getElementById('call-incoming-overlay')?.classList.remove('visible');
             clearTimeout(S.incomingTimer); startCall(true);
         });
 
-        // Controls
         document.getElementById('call-hangup-btn')?.addEventListener('click', endCall);
         document.getElementById('call-mini-hangup')?.addEventListener('click', e => { e.stopPropagation(); endCall(); });
         document.getElementById('call-minimize-btn')?.addEventListener('click', minimizeWindow);
@@ -844,7 +850,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
             if (S.immersive && !e.target.closest('#call-immersive-btn')) toggleImmersive();
         });
 
-        // Size presets
         document.getElementById('call-size-preset-toggle')?.addEventListener('click', e => {
             e.stopPropagation();
             const p = document.getElementById('call-size-presets');
@@ -864,7 +869,6 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
                 document.getElementById('call-size-presets')?.classList.remove('open');
         });
 
-        // BG upload (no size limit)
         document.getElementById('call-bg-btn')?.addEventListener('click', () => document.getElementById('call-bg-file-input')?.click());
         document.getElementById('call-bg-file-input')?.addEventListener('change', e => {
             const f = e.target.files?.[0]; if (!f) return;
@@ -873,16 +877,14 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
             r.readAsDataURL(f); e.target.value = '';
         });
 
-        // Call feature toggle (delegated, works for both old dm-card and new chat-modal rhythm panel)
         document.addEventListener('change', e => {
             if (e.target.id !== 'call-enabled-toggle') return;
             S.enabled = e.target.checked;
             localStorage.setItem(KEY_ENABLED, S.enabled);
-            // Style the notif-toggle-slider knob
-            const slider = e.target.nextElementSibling;
-            if (slider) slider.style.background = S.enabled ? 'var(--accent-color)' : '';
             const btn = document.getElementById('call-toolbar-btn');
             if (btn) btn.style.display = S.enabled ? '' : 'none';
+            const collapsedCallBtn = document.getElementById('collapsed-call-btn');
+            if (collapsedCallBtn) collapsedCallBtn.style.display = S.enabled ? '' : 'none';
             if (!S.enabled && S.active) endCall();
             S.enabled ? scheduleRandomCall() : clearTimeout(S.randomCallTimer);
         });
@@ -890,10 +892,8 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         initDrag(); initPillDrag(); initResize();
     }
 
-    /* ── Public ───────────────────────────────────────────── */
     window.callFeature = { startCall, endCall, showIncomingCall, restoreWindow, minimizeWindow };
 
-    /* ── Init ─────────────────────────────────────────────── */
     function init() {
         injectCSS();
         injectHTML();
@@ -903,18 +903,15 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         const late = () => {
             injectToolbarBtn();
             if (S.enabled) scheduleRandomCall();
-            // Sync call-enabled-toggle checkbox in chat-modal rhythm panel
             const syncCallToggle = () => {
                 const tog = document.getElementById('call-enabled-toggle');
                 if (tog) {
                     tog.checked = S.enabled;
-                    // Style the notif-toggle-slider to reflect state
-                    const slider = tog.nextElementSibling;
-                    if (slider) slider.style.background = S.enabled ? 'var(--accent-color)' : '';
                 }
+                const collapsedCallBtn = document.getElementById('collapsed-call-btn');
+                if (collapsedCallBtn) collapsedCallBtn.style.display = S.enabled ? '' : 'none';
             };
             syncCallToggle();
-            // Also sync after chat-modal opens (settings might not be rendered yet)
             const chatModal = document.getElementById('chat-modal');
             if (chatModal) {
                 new MutationObserver(() => {

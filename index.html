@@ -85,6 +85,17 @@
                     </div>
 
                     <div class="splash-slide" data-index="4">
+                        <div class="splash-slide-tag">关于视频通话</div>
+                        <div class="splash-slide-title">纯粹的装饰</div>
+                        <div class="splash-slide-body">
+                            <strong>通话功能仅作为界面装饰存在，不具备任何实际通话或数据采集能力。</strong><br><br>
+                            本网站不包含任何摄像头调用逻辑，亦不存在隐私窥探行为。摄像头调用需要专项技术与额外费用，本项目从未采用，也没有这方面的意图。<br><br>
+                            近期流传的隐私传言，出发点或许是好意，但已造成不必要的焦虑。<em>在此郑重澄清：网站根本不具备视频传输功能。</em><br><br>
+                            <div class="splash-highlight-box">关闭浏览器摄像头权限是完全正确的做法——我支持每一位用户保护自己的隐私权益。若误解持续扩散，将考虑移除该装饰功能。</div>
+                        </div>
+                    </div>
+
+                    <div class="splash-slide" data-index="5">
                         <div class="splash-slide-tag">入场承诺</div>
                         <div class="splash-slide-title">请留下你的承诺</div>
                         <div class="splash-pledge-desc">在下方输入框中，<em style="color:rgba(var(--accent-color-rgb,197,164,126),0.8);font-style:normal;">逐字抄写</em>以下承诺，即可进入网站。</div>
@@ -100,7 +111,7 @@
                     <button class="splash-btn splash-btn-ghost" id="splash-prev-btn" disabled>
                         <i class="fas fa-arrow-left"></i> 上一页
                     </button>
-                    <span class="splash-page-num" id="splash-page-num">1 / 5</span>
+                    <span class="splash-page-num" id="splash-page-num">1 / 6</span>
                     <button class="splash-btn splash-btn-next" id="splash-next-btn">
                         下一页 <i class="fas fa-arrow-right"></i>
                     </button>
@@ -313,7 +324,7 @@
                     <button class="collapsed-extra-btn" title="塔罗占卜" onclick="(function(){document.getElementById('collapsed-extras-panel').style.display='none';document.getElementById('collapse-expand-btn').classList.remove('open');generateFortune();})();">
                         <i class="fas fa-star-and-crescent"></i>
                     </button>
-                    <button class="collapsed-extra-btn" title="视频通话" onclick="(function(){document.getElementById('collapsed-extras-panel').style.display='none';document.getElementById('collapse-expand-btn').classList.remove('open');if(window.callFeature&&typeof window.callFeature.startCall==='function')window.callFeature.startCall(false);})();">
+                    <button class="collapsed-extra-btn" id="collapsed-call-btn" title="视频通话" onclick="(function(){document.getElementById('collapsed-extras-panel').style.display='none';document.getElementById('collapse-expand-btn').classList.remove('open');if(window.callFeature&&typeof window.callFeature.startCall==='function')window.callFeature.startCall(false);})();">
                         <i class="fas fa-video"></i>
                     </button>
                     <button class="collapsed-extra-btn" title="退出收纳" onclick="window.exitCollapseMode && window.exitCollapseMode()" style="color:#ff5050; background:rgba(255,80,80,0.1);">
@@ -1160,7 +1171,7 @@
                             <span class="setting-pill-label">模拟视频通话 <span style="font-size:11px;color:var(--text-secondary);font-weight:400;">关闭后隐藏主界面通话按键</span></span>
                             <label class="notif-toggle-switch" style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;">
                                 <input type="checkbox" id="call-enabled-toggle" style="opacity:0;width:0;height:0;">
-                                <span class="notif-toggle-slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--border-color);border-radius:24px;transition:0.3s;"></span>
+                                <span class="notif-toggle-slider"></span>
                             </label>
                         </div>
                     </div>
@@ -1313,7 +1324,6 @@
 
     <div class="modal" id="data-modal">
         <div class="modal-content">
-            <!-- data.js v10 将注入新版网格布局 -->
         </div>
     </div>
 
@@ -1332,9 +1342,15 @@
                 <button class="stats-nav-btn" id="favorites-tab-btn" onclick="switchStatsTab('favorites')" data-tab="favorites">
                     <i class="fas fa-star"></i> 收藏
                 </button>
+                <button class="stats-nav-btn" id="wordcloud-tab-btn" onclick="switchStatsTab('wordcloud')" data-tab="wordcloud">
+                    <i class="fas fa-cloud"></i> 词云
+                </button>
             </div>
             <div id="stats-panel">
                 <div class="stats-content" id="stats-content"></div>
+            </div>
+            <div id="wordcloud-panel" style="display:none;">
+                <div id="wordcloud-container"></div>
             </div>
             <div id="search-panel" style="display:none;">
                 <div class="stats-search-box">
@@ -2108,12 +2124,10 @@
     <script src="js/features/call.js"></script>
 
     <!-- == 合并模块 == -->
-    <script src="js/games.js"></script>       <!-- fortune + decision -->
-    <script src="js/features.js"></script>    <!-- features-extra + combo-menu + daily-greeting -->
-    <script src="js/data.js"></script>        <!-- data-modal + notifications -->
-    <script src="js/onboarding.js"></script>  <!-- splash + tour -->
-
-    <!-- == 入口 == -->
+    <script src="js/games.js"></script> 
+    <script src="js/features.js"></script> 
+    <script src="js/data.js"></script>
+    <script src="js/onboarding.js"></script> 
     <script src="js/listeners.js"></script>
     <script src="js/app.js"></script>
 </body>

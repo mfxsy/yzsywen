@@ -1,8 +1,3 @@
-/**
- * features/reply-library.js — 回复库 · 全新重构版
- * ✦ 移动优先 · 底部 Tab 导航 · 精美卡片 · 分组高度自定义 · 批量管理
- */
-
 if (typeof customReplyGroups === 'undefined') window.customReplyGroups = [];
 if (typeof replyGroupsEnabled === 'undefined') window.replyGroupsEnabled = false;
 
@@ -54,14 +49,63 @@ const ICONS = {
 };
 
 
-// 仅重渲染列表内容区域，不重建工具栏（搜索时使用，避免 input 焦点丢失）
+// ─── 共享样式：只注入一次，避免每张卡片各塞一个 <style> ───────────────────
+(function _injectReplyLibStyles() {
+    if (document.getElementById('rl-shared-styles')) return;
+    const s = document.createElement('style');
+    s.id = 'rl-shared-styles';
+    s.textContent = `
+        .rl-card {
+            display:flex;align-items:flex-start;gap:0;padding:11px 13px;
+            border-radius:12px;border:1.5px solid var(--border-color);
+            background:var(--secondary-bg);margin-bottom:7px;
+            transition:all 0.18s;position:relative;overflow:hidden;
+        }
+        .rl-card:hover { border-color:var(--accent-color);transform:translateY(-1px);box-shadow:0 3px 12px rgba(0,0,0,0.08); }
+        .rl-card.rl-selected { border-color:var(--accent-color);background:rgba(var(--accent-color-rgb,180,140,100),0.08); }
+        .rl-card-actions {
+            display:flex;gap:3px;margin-left:auto;flex-shrink:0;padding-left:8px;
+            opacity:0;transition:opacity 0.18s;align-items:center;
+        }
+        .rl-card:hover .rl-card-actions { opacity:1; }
+        @media (hover:none) { .rl-card-actions { opacity:1; } }
+        .rl-act-btn {
+            width:28px;height:28px;border-radius:8px;border:none;
+            background:transparent;color:var(--text-secondary);cursor:pointer;
+            display:flex;align-items:center;justify-content:center;transition:all 0.15s;
+            flex-shrink:0;
+        }
+        .rl-act-btn:hover { border-color:var(--accent-color);color:var(--accent-color); }
+        .rl-act-btn.danger:hover { border-color:#ef4444;color:#ef4444; }
+        .rl-act-btn.active { background:var(--accent-color);border-color:var(--accent-color);color:#fff; }
+        .rl-group-block { margin-bottom:12px; }
+        .rl-group-header {
+            display:flex;align-items:center;gap:9px;padding:9px 14px;
+            border-radius:12px 12px 0 0;
+            background:var(--secondary-bg);cursor:pointer;user-select:none;
+            transition:background 0.2s;
+        }
+        .rl-group-header.collapsed { border-radius:12px; }
+        .rl-group-header:hover { background:rgba(var(--accent-color-rgb,180,140,100),0.06); }
+        .rl-group-body { border:1px solid var(--border-color);border-top:none;border-radius:0 0 12px 12px;padding:6px 8px 8px;background:var(--primary-bg); }
+        .rl-group-tag {
+            display:inline-flex;align-items:center;gap:5px;
+            padding:2px 9px 2px 6px;border-radius:20px;
+            cursor:pointer;transition:all 0.15s;
+        }
+        .rl-batch-check {
+            width:18px;height:18px;border-radius:5px;flex-shrink:0;margin-top:1px;
+            display:flex;align-items:center;justify-content:center;transition:all 0.15s;
+        }
+    `;
+    (document.head || document.documentElement).appendChild(s);
+})();
+
 function _renderListContentOnly() {
     const list = document.getElementById('custom-replies-list');
     if (!list) return;
 
-    // 移除上次渲染的列表内容（保留 toolbar 和其子元素）
     const toolbar = document.getElementById('batch-ops-toolbar');
-    // 清理 list 中非 toolbar 的节点
     Array.from(list.children).forEach(child => {
         if (child !== toolbar) child.remove();
     });
@@ -104,6 +148,16 @@ function _renderListContentOnly() {
     } else {
         _renderAtmosphereList(list, filtered);
     }
+}
+
+let _rlRafId = null;
+/** 防抖版 renderReplyLibrary：同一帧内多次调用只渲染一次 */
+function renderReplyLibraryRaf() {
+    if (_rlRafId) return;
+    _rlRafId = requestAnimationFrame(() => {
+        _rlRafId = null;
+        renderReplyLibrary();
+    });
 }
 
 function renderReplyLibrary() {
@@ -440,9 +494,12 @@ function _renderModernToolbar() {
 
 function _renderCardViewWithGroups(list, items) {
     const disabledSet = _getDisabledItemsSet();
-    const itemsWithIdx = items.map((text, idx) => ({
+    // 预建索引 Map，避免 indexOf 的 O(n²) 查找
+    const replyIndexMap = new Map();
+    customReplies.forEach((r, i) => { if (!replyIndexMap.has(r)) replyIndexMap.set(r, i); });
+    const itemsWithIdx = items.map(text => ({
         text,
-        idx: customReplies.indexOf(text)
+        idx: replyIndexMap.has(text) ? replyIndexMap.get(text) : -1
     }));
 
     if (_activeGroupFilter === null) {
@@ -496,26 +553,7 @@ function _renderGroupBlock(list, group, groupItems, disabledSet, isUngrouped = f
     const colorDot = group.color || '#868E96';
 
     section.innerHTML = `
-        <style>
-            .rl-group-block { margin-bottom:12px; }
-            .rl-group-header {
-                display:flex;align-items:center;gap:9px;padding:9px 14px;
-                border-radius:12px 12px ${isCollapsed ? '12px 12px' : '0 0'};
-                background:var(--secondary-bg);cursor:pointer;user-select:none;
-                transition:background 0.2s;
-                ${isDisabled ? 'opacity:0.5;' : ''}
-            }
-            .rl-group-header:hover { background:rgba(var(--accent-color-rgb,180,140,100),0.06); }
-            .rl-group-body { border:1px solid var(--border-color);border-top:none;border-radius:0 0 12px 12px;padding:6px 8px 8px;background:var(--primary-bg); }
-            .rl-group-tag {
-                display:inline-flex;align-items:center;gap:5px;
-                padding:2px 9px 2px 6px;border-radius:20px;
-                border:1.5px solid ${colorDot}30;background:${colorDot}15;
-                cursor:pointer;transition:all 0.15s;
-            }
-            .rl-group-tag:hover { background:${colorDot}30; }
-        </style>
-        <div class="rl-group-header" id="grp-hdr-${group.id}">
+        <div class="rl-group-header${isCollapsed ? ' collapsed' : ''}" id="grp-hdr-${group.id}" style="${isDisabled ? 'opacity:0.5;' : ''}">
             <div class="rl-group-tag" id="grp-tag-${group.id}" title="${isDisabled ? '点击启用此分组' : '点击屏蔽此分组'}">
                 <span style="width:8px;height:8px;border-radius:50%;background:${colorDot};flex-shrink:0;"></span>
                 <span style="font-size:12px;font-weight:700;color:${colorDot};">${group.name}</span>
@@ -572,7 +610,7 @@ function _renderGroupBlock(list, group, groupItems, disabledSet, isUngrouped = f
         group._collapsed = !group._collapsed;
         body.style.display = group._collapsed ? 'none' : 'block';
         section.querySelector('.grp-chevron').style.transform = group._collapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
-        section.querySelector('.rl-group-header').style.borderRadius = group._collapsed ? '12px' : '12px 12px 0 0';
+        section.querySelector('.rl-group-header').classList.toggle('collapsed', !!group._collapsed);
     });
 
     const tag = section.querySelector(`#grp-tag-${group.id}`);
@@ -592,10 +630,34 @@ function _renderGroupBlock(list, group, groupItems, disabledSet, isUngrouped = f
     });
 }
 
+const _CARD_PAGE_SIZE = 80; // 每次最多渲染 80 张，超过时追加"显示更多"
+
 function _renderCardList(container, itemsWithIdx, disabledSet) {
-    itemsWithIdx.forEach(({ text, idx }) => {
-        container.appendChild(_createCard(text, idx, disabledSet));
+    const total = itemsWithIdx.length;
+    const toRender = itemsWithIdx.slice(0, _CARD_PAGE_SIZE);
+    const remaining = total - toRender.length;
+
+    const frag = document.createDocumentFragment();
+    toRender.forEach(({ text, idx }) => {
+        frag.appendChild(_createCard(text, idx, disabledSet));
     });
+
+    if (remaining > 0) {
+        const btn = document.createElement('button');
+        btn.style.cssText = 'width:100%;padding:10px;margin-top:4px;border:1.5px dashed var(--border-color);border-radius:12px;background:transparent;color:var(--text-secondary);font-size:12px;cursor:pointer;font-family:var(--font-family);';
+        btn.textContent = `显示剩余 ${remaining} 条`;
+        btn.onclick = () => {
+            btn.remove();
+            const moreFrag = document.createDocumentFragment();
+            itemsWithIdx.slice(_CARD_PAGE_SIZE).forEach(({ text, idx }) => {
+                moreFrag.appendChild(_createCard(text, idx, disabledSet));
+            });
+            container.appendChild(moreFrag);
+        };
+        frag.appendChild(btn);
+    }
+
+    container.appendChild(frag);
 }
 
 function _createCard(item, index, disabledSet) {
@@ -625,21 +687,12 @@ function _createCard(item, index, disabledSet) {
         : `<span style="font-size:13px;">${item}</span>`;
 
     if (_batchModeActive) {
-        div.style.cssText = `cursor:pointer;`;
+        div.style.cssText = 'cursor:pointer;';
+        div.className = 'rl-card' + (isSelected ? ' rl-selected' : '');
         div.innerHTML = `
-            <style>
-                .rl-card {
-                    display:flex;align-items:flex-start;gap:10px;padding:11px 13px;
-                    border-radius:12px;border:1.5px solid ${isSelected ? 'var(--accent-color)' : 'var(--border-color)'};
-                    background:${isSelected ? 'rgba(var(--accent-color-rgb,180,140,100),0.08)' : 'var(--secondary-bg)'};
-                    margin-bottom:7px;transition:all 0.15s;
-                }
-            </style>
-            <div style="
-                width:18px;height:18px;border-radius:5px;flex-shrink:0;margin-top:1px;
+            <div class="rl-batch-check" style="
                 border:1.5px solid ${isSelected ? 'var(--accent-color)' : 'var(--border-color)'};
                 background:${isSelected ? 'var(--accent-color)' : 'transparent'};
-                display:flex;align-items:center;justify-content:center;transition:all 0.15s;
             ">
                 ${isSelected ? `<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>` : ''}
             </div>
@@ -657,30 +710,6 @@ function _createCard(item, index, disabledSet) {
     }
 
     div.innerHTML = `
-        <style>
-            .rl-card {
-                display:flex;align-items:flex-start;gap:0;padding:11px 13px;
-                border-radius:12px;border:1.5px solid var(--border-color);
-                background:var(--secondary-bg);margin-bottom:7px;
-                transition:all 0.18s;position:relative;overflow:hidden;
-            }
-            .rl-card:hover { border-color:var(--accent-color);transform:translateY(-1px);box-shadow:0 3px 12px rgba(0,0,0,0.08); }
-            .rl-card-actions {
-                display:flex;gap:3px;margin-left:auto;flex-shrink:0;padding-left:8px;
-                opacity:0;transition:opacity 0.18s;align-items:center;
-            }
-            .rl-card:hover .rl-card-actions { opacity:1; }
-            @media (hover:none) { .rl-card-actions { opacity:1; } }
-            .rl-act-btn {
-                width:28px;height:28px;border-radius:8px;border:none;
-                background:transparent;color:var(--text-secondary);cursor:pointer;
-                display:flex;align-items:center;justify-content:center;transition:all 0.15s;
-                flex-shrink:0;
-            }
-            .rl-act-btn:hover { border-color:var(--accent-color);color:var(--accent-color); }
-            .rl-act-btn.danger:hover { border-color:#ef4444;color:#ef4444; }
-            .rl-act-btn.active { background:var(--accent-color);border-color:var(--accent-color);color:#fff; }
-        </style>
         <div style="flex:1;min-width:0;${isDisabled ? 'opacity:0.4;text-decoration:line-through;' : ''}">
             ${displayText}
             ${groupBadge}
@@ -711,14 +740,16 @@ function _createCard(item, index, disabledSet) {
 
 function _renderAtmosphereList(list, items) {
     const disabledSet = _getDisabledItemsSet();
+    // 预建各数组的索引 Map，避免 O(n²)
+    const indexMaps = {
+        pokes:    new Map(customPokes.map((r,i)   => [r, i])),
+        statuses: new Map(customStatuses.map((r,i) => [r, i])),
+        mottos:   new Map(customMottos.map((r,i)   => [r, i])),
+        intros:   new Map(customIntros.map((r,i)   => [r, i])),
+    };
+    const frag = document.createDocumentFragment();
     items.forEach((item, idx) => {
-        const realIdx = (() => {
-            if (currentSubTab === 'pokes') return customPokes.indexOf(item);
-            if (currentSubTab === 'statuses') return customStatuses.indexOf(item);
-            if (currentSubTab === 'mottos') return customMottos.indexOf(item);
-            if (currentSubTab === 'intros') return customIntros.indexOf(item);
-            return idx;
-        })();
+        const realIdx = (indexMaps[currentSubTab] || { get: () => idx }).get(item) ?? idx;
         const div = document.createElement('div');
         div.className = 'custom-reply-item';
         div.innerHTML = `
@@ -730,8 +761,9 @@ function _renderAtmosphereList(list, items) {
         `;
         div.querySelector('.delete-btn').onclick = () => deleteItem(realIdx);
         div.querySelector('.edit-btn').onclick = () => editItem(realIdx, item);
-        list.appendChild(div);
+        frag.appendChild(div);
     });
+    list.appendChild(frag);
 }
 
 function _renderEmojiTab(list, itemsToRender) {
@@ -1416,38 +1448,25 @@ function _showGroupExportPicker() {
     };
 }
 
-/**
- * 宽容JSON解析器：自动修复常见语法问题（尾随逗号、缺失逗号等）
- */
 function _parseFlexibleJSON(text) {
-    // First try strict parse
     try { return JSON.parse(text); } catch (_) {}
-    // Repair: remove trailing commas before ] or }
     let repaired = text
-        .replace(/,\s*([}\]])/g, '$1')      // trailing commas
-        .replace(/(["\d\w}])\s*\n\s*"/g, (m, p1) => {  // missing commas between string items
+        .replace(/,\s*([}\]])/g, '$1')  
+        .replace(/(["\d\w}])\s*\n\s*"/g, (m, p1) => { 
             if (p1 === '}' || p1 === ']') return m;
             return p1 + ',\n"';
         });
     try { return JSON.parse(repaired); } catch (_) {}
-    // More aggressive repair: fix missing commas between quoted strings on consecutive lines
     repaired = text.replace(/("(?:[^"\\]|\\.)*")\s*\n(\s*")/g, '$1,\n$2')
                    .replace(/,\s*([}\]])/g, '$1');
     return JSON.parse(repaired);
 }
 
-/**
- * 旧格式兼容转换：将旧版导出的字卡文件规范化为当前格式
- * 旧格式特征：有 exportDate 或 modules 字段
- * 新格式特征：有 version 字段
- */
 function _normalizeImportData(data) {
     if (!data || typeof data !== 'object') return data;
-    // Already new format with known keys
     const knownKeys = ['customReplies','customPokes','customStatuses','customMottos','customIntros','customEmojis','customReplyGroups','disabledDefaultReplies'];
     const hasNewFormat = knownKeys.some(k => Array.isArray(data[k]));
     if (hasNewFormat) return data;
-    // Old format: might have different structure or just plain array
     if (Array.isArray(data)) {
         return { customReplies: data };
     }
@@ -1649,43 +1668,71 @@ function _showBatchAddDialog() {
     panel.style.cssText = `
         background:var(--secondary-bg);border-radius:22px;padding:24px;
         width:92%;max-width:420px;
+        max-height:88vh;
+        display:flex;flex-direction:column;
         box-shadow:0 24px 80px rgba(0,0,0,.45);
         animation:popIn 0.22s cubic-bezier(.34,1.56,.64,1);
     `;
+
+    const hasGroups = customReplyGroups && customReplyGroups.length > 0;
+    const groupPillsHTML = hasGroups ? `
+        <button class="ba-grp-pill" data-gidx="-1" style="
+            padding:5px 13px;border-radius:20px;font-size:12px;font-family:var(--font-family);cursor:pointer;
+            border:1.5px solid var(--accent-color);background:var(--accent-color);color:#fff;font-weight:700;
+            flex-shrink:0;transition:all .15s;
+        ">不分组</button>
+        ${customReplyGroups.map((g, i) => `
+        <button class="ba-grp-pill" data-gidx="${i}" style="
+            padding:5px 13px;border-radius:20px;font-size:12px;font-family:var(--font-family);cursor:pointer;
+            border:1.5px solid ${g.color}44;background:${g.color}18;color:${g.color};font-weight:600;
+            flex-shrink:0;transition:all .15s;
+        ">
+            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${g.color};margin-right:4px;vertical-align:middle;"></span>${g.name}
+        </button>`).join('')}
+    ` : '';
+
     panel.innerHTML = `
-        <style>@keyframes popIn { from{opacity:0;transform:scale(.93)} to{opacity:1;transform:scale(1)} }</style>
-        <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">批量添加字卡</div>
-        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;line-height:1.6;">每行一条，自动去重</div>
-        <textarea id="batch-add-input" rows="10" placeholder="在此粘贴内容，每行一条…" style="
-            width:100%;box-sizing:border-box;padding:12px 14px;
-            border:1.5px solid var(--border-color);border-radius:13px;
-            background:var(--primary-bg);color:var(--text-primary);
-            font-size:13px;font-family:var(--font-family);outline:none;resize:vertical;
-            line-height:1.6;transition:border 0.18s;
-        "></textarea>
-        <div style="font-size:11px;color:var(--text-secondary);margin-top:6px;margin-bottom:12px;">
-            <span id="batch-add-count">0 条</span>
-        </div>
-        ${(customReplyGroups && customReplyGroups.length > 0) ? `
-        <div style="margin-bottom:16px;">
-            <div style="font-size:11px;font-weight:700;color:var(--text-secondary);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;">添加到分组</div>
-            <div id="ba-group-list" style="display:flex;flex-wrap:wrap;gap:7px;">
-                <button class="ba-grp-pill" data-gidx="-1" style="
-                    padding:5px 13px;border-radius:20px;font-size:12px;font-family:var(--font-family);cursor:pointer;
-                    border:1.5px solid var(--accent-color);background:var(--accent-color);color:#fff;font-weight:700;
-                    transition:all .15s;
-                ">不分组</button>
-                ${customReplyGroups.map((g, i) => `
-                <button class="ba-grp-pill" data-gidx="${i}" style="
-                    padding:5px 13px;border-radius:20px;font-size:12px;font-family:var(--font-family);cursor:pointer;
-                    border:1.5px solid ${g.color}44;background:${g.color}18;color:${g.color};font-weight:600;
-                    transition:all .15s;
-                ">
-                    <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${g.color};margin-right:4px;vertical-align:middle;"></span>${g.name}
-                </button>`).join('')}
+        <style>
+            @keyframes popIn { from{opacity:0;transform:scale(.93)} to{opacity:1;transform:scale(1)} }
+            @keyframes baGroupSlide { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+        </style>
+        <div style="flex-shrink:0;font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">批量添加字卡</div>
+        <div style="flex-shrink:0;font-size:12px;color:var(--text-secondary);margin-bottom:14px;line-height:1.6;">每行一条，自动去重</div>
+
+        <div style="flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;">
+            <textarea id="batch-add-input" rows="10" placeholder="在此粘贴内容，每行一条…" style="
+                width:100%;box-sizing:border-box;padding:12px 14px;
+                border:1.5px solid var(--border-color);border-radius:13px;
+                background:var(--primary-bg);color:var(--text-primary);
+                font-size:13px;font-family:var(--font-family);outline:none;resize:vertical;
+                line-height:1.6;transition:border 0.18s;
+            "></textarea>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:6px;margin-bottom:12px;">
+                <span id="batch-add-count">0 条</span>
             </div>
-        </div>` : ''}
-        <div style="display:flex;gap:10px;">
+
+            ${hasGroups ? `
+            <div id="ba-group-section" style="margin-bottom:4px;">
+                <button id="ba-group-toggle" style="
+                    display:flex;align-items:center;gap:7px;width:100%;
+                    padding:9px 12px;border-radius:11px;cursor:pointer;
+                    border:1.5px solid var(--border-color);background:var(--primary-bg);
+                    color:var(--text-secondary);font-size:12px;font-family:var(--font-family);
+                    font-weight:600;transition:all .15s;text-align:left;
+                ">
+                    <i class="fas fa-folder" style="font-size:12px;color:var(--accent-color);"></i>
+                    <span id="ba-toggle-label">添加到分组</span>
+                    <span id="ba-toggle-arrow" style="margin-left:auto;font-size:10px;transition:transform .2s;">▼</span>
+                </button>
+                <div id="ba-group-drawer" style="display:none;overflow-x:auto;overflow-y:hidden;padding:10px 2px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch;">
+                    <div id="ba-group-list" style="display:flex;gap:7px;width:max-content;">
+                        ${groupPillsHTML}
+                    </div>
+                </div>
+            </div>` : ''}
+        </div>
+
+        <div style="flex-shrink:0;padding-top:14px;display:flex;gap:10px;">
             <button id="ba-cancel" style="flex:1;padding:12px;border:1.5px solid var(--border-color);border-radius:13px;background:none;color:var(--text-secondary);font-size:13px;cursor:pointer;font-family:var(--font-family);">取消</button>
             <button id="ba-confirm" style="flex:2;padding:12px;border:none;border-radius:13px;background:var(--accent-color);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font-family);">添加</button>
         </div>
@@ -1702,15 +1749,44 @@ function _showBatchAddDialog() {
     ta.addEventListener('focus', e => { e.target.style.borderColor = 'var(--accent-color)'; });
     ta.addEventListener('blur', e => { e.target.style.borderColor = 'var(--border-color)'; });
 
-    // Group pill selection
-    let _selectedGroupIdx = -1; // -1 = no group
+    const groupToggle = panel.querySelector('#ba-group-toggle');
+    const groupDrawer = panel.querySelector('#ba-group-drawer');
+    const toggleArrow = panel.querySelector('#ba-toggle-arrow');
+    const toggleLabel = panel.querySelector('#ba-toggle-label');
+    let _drawerOpen = false;
+    if (groupToggle && groupDrawer) {
+        groupToggle.addEventListener('click', () => {
+            _drawerOpen = !_drawerOpen;
+            if (_drawerOpen) {
+                groupDrawer.style.display = 'block';
+                groupDrawer.style.animation = 'baGroupSlide 0.18s ease forwards';
+                toggleArrow.style.transform = 'rotate(180deg)';
+                groupToggle.style.borderColor = 'var(--accent-color)';
+                groupToggle.style.color = 'var(--text-primary)';
+            } else {
+                groupDrawer.style.display = 'none';
+                toggleArrow.style.transform = '';
+                groupToggle.style.borderColor = 'var(--border-color)';
+                groupToggle.style.color = 'var(--text-secondary)';
+            }
+        });
+    }
+
+    let _selectedGroupIdx = -1; 
     const pillContainer = panel.querySelector('#ba-group-list');
     if (pillContainer) {
         pillContainer.addEventListener('click', e => {
             const pill = e.target.closest('.ba-grp-pill');
             if (!pill) return;
             _selectedGroupIdx = parseInt(pill.dataset.gidx);
-            // Update pill styles
+            if (toggleLabel) {
+                if (_selectedGroupIdx === -1) {
+                    toggleLabel.textContent = '添加到分组';
+                } else {
+                    const g = customReplyGroups[_selectedGroupIdx];
+                    toggleLabel.textContent = g ? `分组：${g.name}` : '添加到分组';
+                }
+            }
             pillContainer.querySelectorAll('.ba-grp-pill').forEach((p, i) => {
                 const gidx = parseInt(p.dataset.gidx);
                 if (gidx === -1) {
@@ -1749,7 +1825,6 @@ function _showBatchAddDialog() {
             else if (currentSubTab === 'mottos') customMottos.push(val);
             added++;
         });
-        // Assign newly added items to selected group
         if (currentSubTab === 'custom' && _selectedGroupIdx >= 0 && newItems.length > 0 && customReplyGroups) {
             const targetGroup = customReplyGroups[_selectedGroupIdx];
             if (targetGroup) {
@@ -1957,11 +2032,9 @@ function applyAvatarFrame(avatarContainer, frameSettings) {
         frameElement.style.width = `${frameSettings.size || 100}%`;
         frameElement.style.height = `${frameSettings.size || 100}%`;
         frameElement.style.transform = `translate(calc(-50% + ${frameSettings.offsetX || 0}px), calc(-50% + ${frameSettings.offsetY || 0}px))`;
-        // Override overflow:hidden !important from shape classes so the frame is not clipped
         avatarContainer.style.setProperty('overflow', 'visible', 'important');
     } else {
         frameElement?.remove();
-        // Restore overflow management to CSS shape classes
         avatarContainer.style.removeProperty('overflow');
     }
 }
@@ -2029,7 +2102,6 @@ function setupAvatarFrameSettings() {
             reader.readAsDataURL(file);
         });
 
-        // URL import button
         const urlBtn = document.getElementById(`${type}-frame-url-btn-2`);
         if (urlBtn) {
             urlBtn.addEventListener('click', () => {

@@ -1,12 +1,8 @@
-/**
- * features/group-chat.js - 多人模式 Group Chat
- * 群聊成员管理与多人聊天模式
- */
-
 window.switchStatsTab = function(tab) {
     var statsPanel = document.getElementById('stats-panel');
     var favoritesPanel = document.getElementById('favorites-panel');
     var searchPanel = document.getElementById('search-panel');
+    var wordcloudPanel = document.getElementById('wordcloud-panel');
     var allBtns = document.querySelectorAll('.stats-nav-btn');
     allBtns.forEach(function(b) { b.classList.remove('active'); });
     var activeBtn = document.querySelector('.stats-nav-btn[data-tab="' + tab + '"]');
@@ -15,6 +11,7 @@ window.switchStatsTab = function(tab) {
     if (statsPanel) statsPanel.style.display = 'none';
     if (favoritesPanel) favoritesPanel.style.display = 'none';
     if (searchPanel) searchPanel.style.display = 'none';
+    if (wordcloudPanel) wordcloudPanel.style.display = 'none';
 
     if (tab === 'stats') {
         if (statsPanel) statsPanel.style.display = 'block';
@@ -24,6 +21,11 @@ window.switchStatsTab = function(tab) {
             var inp = document.getElementById('msg-search-input');
             if (inp) inp.focus();
         }, 100);
+    } else if (tab === 'wordcloud') {
+        if (wordcloudPanel) wordcloudPanel.style.display = 'block';
+        requestAnimationFrame(function() {
+            if (typeof renderWordCloud === 'function') renderWordCloud();
+        });
     } else {
         if (favoritesPanel) favoritesPanel.style.display = 'block';
         if (typeof renderFavorites === 'function') renderFavorites();
@@ -575,7 +577,6 @@ window.startEditDgWeather = function(el) {
     });
 
 
-// ─── Message Search (_runMsgSearch) ───────────────────────────────────────────
 window._runMsgSearch = function() {
     var input = document.getElementById('msg-search-input');
     var dateFrom = document.getElementById('msg-search-date-from');
@@ -610,7 +611,6 @@ window._runMsgSearch = function() {
         return;
     }
 
-    // Get avatars
     var myAvatarEl = document.querySelector('#my-avatar img');
     var partnerAvatarEl = document.querySelector('#partner-avatar img');
     var myAvatar = myAvatarEl ? myAvatarEl.src : '';
@@ -630,7 +630,6 @@ window._runMsgSearch = function() {
         var name = isUser ? myName : partnerName;
         var avatar = isUser ? myAvatar : partnerAvatar;
 
-        // Group chat member
         if (!isUser && typeof groupChatSettings !== 'undefined' && groupChatSettings.enabled && groupChatSettings.members) {
             var member = groupChatSettings.members.find(function(m) { return m.name === msg.sender; });
             if (member) {
@@ -662,13 +661,11 @@ window._runMsgSearch = function() {
             + '</div></div>';
     }).join('');
 
-    // Result count
     resultsEl.insertAdjacentHTML('afterbegin',
         '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;padding:0 2px;">共找到 ' + filtered.length + ' 条结果</div>'
     );
 };
 
-// Allow clicking search result to scroll to message in chat
 window.scrollToMessage = function(msgId) {
     var el = document.querySelector('[data-id="' + msgId + '"]');
     if (el) {

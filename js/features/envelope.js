@@ -1,8 +1,3 @@
-/**
- * features/envelope.js - 信封投递 Envelope Feature & Appearance Panel
- * 信封功能与外观面板切换
- */
-
 let envelopeData = { outbox: [], inbox: [] }; 
 let currentEnvTab = 'outbox';
 let editingEnvId = null; 

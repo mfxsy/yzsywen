@@ -1,8 +1,3 @@
-/**
- * features/mood.js - 心晴手账 Mood Tracker
- * 心情日历与情绪追踪
- */
-
 function toggleBatchFavoriteMode() {
             isBatchFavoriteMode = !isBatchFavoriteMode;
             selectedMessages = [];

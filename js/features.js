@@ -1,23 +1,3 @@
-/**
- * features.js - 扩展功能集合
- * 合并自：features-extra.js + combo-menu.js + daily-greeting.js
- *
- * 包含：
- *  1. 戳一戳装饰符号设置
- *  2. 顶部栏透明度开关
- *  3. 挂机保活音频
- *  4. 全局消息搜索
- *  5. Emoji/拍一拍快捷组合菜单
- *  6. 每日问候 & 沉浸模式
- */
-/**
- * features-extra.js — 扩展功能模块
- * 修复版：戳一戳多样式选择、顶部栏透明开关、挂机音频可视化、全局搜索
- */
-
-/* ═══════════════════════════════════════════════
-   1. 戳一戳装饰符号 — 多选项 + 自定义 + 分角色
-   ═══════════════════════════════════════════════ */
 (function() {
     var MY_SYM_KEY   = 'pokeSym_my';
     var PTR_SYM_KEY  = 'pokeSym_partner';
@@ -153,10 +133,6 @@
     setTimeout(_syncPokeDesc, 600);
 })();
 
-
-/* ═══════════════════════════════════════════════
-   2. 顶部栏透明 / 常驻清晰 — style tag 注入法
-   ═══════════════════════════════════════════════ */
 (function() {
     var KEY = 'headerAlwaysClear';
     function _get() { return localStorage.getItem(KEY) === 'true'; }
@@ -178,7 +154,6 @@
 
     function _syncUI() {
         var en  = _get();
-        // The CSS pattern is `.setting-pill-row.active` — toggle on the ROW element
         var row = document.getElementById('header-opacity-toggle');
         if (row) row.classList.toggle('active', en);
         var spans = document.querySelectorAll('#header-opacity-toggle .setting-pill-label span');
@@ -198,10 +173,6 @@
     setTimeout(function(){ _applyHeader(); _syncUI(); }, 1500);
 })();
 
-
-/* ═══════════════════════════════════════════════
-   3. 挂机保活音频 — 带可视状态
-   ═══════════════════════════════════════════════ */
 (function() {
     var KEY = 'keepaliveAudioEnabled';
     var SRC = 'https://img.heliar.top/file/1772885159972_silence.m4a';
@@ -237,7 +208,6 @@
             else              desc.textContent = '等待交互后启动…';
         }
         if (row)  row.style.display = _get() ? 'flex' : 'none';
-        // update waveform bars
         var bars = document.querySelectorAll('.keepalive-wave-bar');
         bars.forEach(function(b){ b.style.animationPlayState = playing ? 'running' : 'paused'; });
     }
@@ -292,10 +262,6 @@
     }, 1800);
 })();
 
-
-/* ═══════════════════════════════════════════════
-   4. 全局消息搜索
-   ═══════════════════════════════════════════════ */
 (function() {
     window._runMsgSearch = function() {
         var inp  = document.getElementById('msg-search-input');
@@ -343,7 +309,6 @@
         }
         function nm(m){ return m.sender==='user'?((typeof settings!=='undefined'&&settings.myName)||'我'):((typeof settings!=='undefined'&&settings.partnerName)||'对方'); }
 
-        // Get real avatars from DOM
         var _myAvSrc = (function(){
             var el = document.querySelector('#my-avatar img,[id*="my-avatar"] img');
             return el ? el.src : null;
@@ -387,14 +352,6 @@
         }
     };
 })();
-
-/* ========================================================
-   combo-menu.js - Emoji/拍一拍组合菜单
-   ======================================================== */
-/**
- * features/combo-menu.js - 组合菜单 Emoji/Poke Combo
- * 快捷菜单、表情标签与戳一戳标签
- */
 
 function renderComboMenu() {
     const content = document.getElementById('user-sticker-content');
@@ -864,15 +821,6 @@ function showPokeTab() {
             DOMElements.batchBtn.addEventListener('click', toggleBatchMode);
         }
 
-
-/* ========================================================
-   daily-greeting.js - 每日问候 & 沉浸模式
-   ======================================================== */
-/**
- * features/daily-greeting.js - 每日问候 Daily Greeting
- * 每日晨报、沉浸模式与问候卡片
- */
-
 window._dailyGreetingReady = false;
 
 function _getDailyGreetingData() {
@@ -1015,8 +963,15 @@ var statusPool = [
     '早安，又是想你的一天'
 ];
     var todayKey = String(now.getFullYear()) + String(month) + String(day);
+    // 为每个安装生成唯一 salt，确保每位用户每天的天气/状态各不相同
+    var userSalt = localStorage.getItem('_dgUserSalt');
+    if (!userSalt) {
+        userSalt = String(Math.floor(Math.random() * 999983) + 1);
+        localStorage.setItem('_dgUserSalt', userSalt);
+    }
     var seed = 0;
-    for (var si = 0; si < todayKey.length; si++) seed += todayKey.charCodeAt(si) * (si + 1);
+    var saltedKey = todayKey + userSalt;
+    for (var si = 0; si < saltedKey.length; si++) seed += saltedKey.charCodeAt(si) * (si + 1);
     function seededRandDg(s, offset) {
         var x = Math.sin(s * 9301 + offset * 49297 + 233) * 1000003;
         return x - Math.floor(x);
@@ -1024,7 +979,13 @@ var statusPool = [
     var defaultWeather = weathers[Math.floor(seededRandDg(seed, 0) * weathers.length)];
     var customWeatherKey = 'customWeather_' + now.getFullYear() + '_' + month + '_' + day;
     var weather = localStorage.getItem(customWeatherKey) || defaultWeather;
-    var status = statusPool[Math.floor(seededRandDg(seed, 1) * statusPool.length)];
+
+    // 混合系统预设 + 用户自定义状态池
+    var userStatusPool = [];
+    try { userStatusPool = JSON.parse(localStorage.getItem('dg_status_pool') || '[]'); } catch(e) {}
+    var userStatusTexts = userStatusPool.map(function(item) { return item.status || item; }).filter(Boolean);
+    var mixedStatusPool = statusPool.concat(userStatusTexts);
+    var status = mixedStatusPool[Math.floor(seededRandDg(seed, 1) * mixedStatusPool.length)];
 
     return { timeLabel: timeLabel, timeEmoji: timeEmoji, festival: festival, weather: weather, status: status };
 }
@@ -1112,8 +1073,17 @@ function _buildDailyGreeting() {
 
         var statusPoolData = [];
         try { statusPoolData = JSON.parse(localStorage.getItem('dg_status_pool') || '[]'); } catch(e2) {}
-        if (statusPoolData.length > 0) {
-            var poolItem = statusPoolData[Math.floor(seededRandom(todaySeedForText + 2) * statusPoolData.length)];
+        // 将系统预设 + 用户自定义混合后，按今日种子选取
+        var systemStatusItems = (function() {
+            var sysPool = [];
+            // 将系统状态文本包装成与 statusPoolData 兼容的格式
+            var baseStatus = (typeof status !== 'undefined') ? status : '';
+            if (baseStatus) sysPool.push({ status: baseStatus, icon: null, iconImg: null });
+            return sysPool;
+        })();
+        var fullPool = systemStatusItems.concat(statusPoolData);
+        if (fullPool.length > 0) {
+            var poolItem = fullPool[Math.floor(seededRandom(todaySeedForText + 2) * fullPool.length)];
             if (poolItem) {
                 setEl('dg-festival', poolItem.label || festLabel);
                 setEl('dg-status', poolItem.status || status);
@@ -1131,15 +1101,9 @@ function _buildDailyGreeting() {
                 }
             }
         } else {
-            setEl('dg-weather', weather);
             setEl('dg-status', status);
         }
-        if (statusPoolData.length === 0) {
-            setEl('dg-weather', weather);
-            setEl('dg-status', status);
-        } else {
-            setEl('dg-weather', weather);
-        }
+        setEl('dg-weather', weather);
 
         var noteTextEl = document.getElementById('dg-note-text');
         if (noteTextEl) noteTextEl.textContent = noteText;
