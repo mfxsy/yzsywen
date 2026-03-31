@@ -1418,153 +1418,7 @@ if (sessionId === currentSessionId) {
         const initMusicPlayer = async () => {
     const latestSystemSongs = [{
                 title: "虚拟", sub: "你是我朝夕相伴触手可及的虚拟", url: "https://files.catbox.moe/6s65mp.mp3"
-            },
-                {
-                    title: "多远都要在一起", sub: "爱能克服远距离", url: "https://files.catbox.moe/06k9ra.mp3"
-                },
-                {
-                    title: "永不失联的爱", sub: "这一辈子都不想失联的爱", url: "https://files.catbox.moe/uvucav.mp3"
-                },
-                {
-                    title: "稳稳的幸福", sub: "这是我想要的幸福", url: "https://files.catbox.moe/inb22a.mp3"
-                },
-                {
-                    title: "有我呢", sub: "我会让你习惯 多一个人陪伴", url: "https://files.catbox.moe/hrazjt"
-                },
-                {
-                    title: "一千零一夜", sub: "梦里能到达的地方啊 有一天脚步也能到达", url: "https://files.catbox.moe/syfuon.mp3"
-                },
-                {
-                    title: "月亮与六便士", sub: "我的世界由你建立 因你崩塌", url: "https://files.catbox.moe/98quqc.mp3"
-                },
-                {
-                    title: "次元恋人", sub: "约好了隔着次元也吻住泪眼", url: "https://files.catbox.moe/5u5dy0.mp3"
-                },
-                {
-                    title: "阳光下的星星", sub: "如果爱上你只是一个梦境", url: "https://files.catbox.moe/dxgqsk.mp3"
-                },
-                {
-                    title: "周边", sub: "灵魂里空缺的那段", url: "https://files.catbox.moe/a7k5wd.mp3"
-                },
-                {
-                    title: "恋爱ing", sub: "让我重新认识L O V E", url: "https://files.catbox.moe/94slcd.mp3"
-                },
-                {
-                    title: "一点一滴", sub: "你让爱一点一滴汇成河", url: "https://files.catbox.moe/958qzg.mp3"
-                },
-                {
-                    title: "关键词", sub: "让我见识爱情可以慷慨又自私", url: "https://files.catbox.moe/9yl5ic.mp3"
-                },
-                {
-                    title: "想见你想见你想见你", sub: "穿越了千个万个时间线里人海里相依", url: "https://files.catbox.moe/co58d7.mp3"
-                },
-                {
-                    title: "star crossing night", sub: "这里没有你", url: "https://files.catbox.moe/i3f86b.mp3"
-                },
-                {
-                    title: "sea temple", sub: "If we have each other", url: "https://files.catbox.moe/c57gxs.mp3"
-                },
-                {
-                    title: "我想要占据你", sub: "占据你的⼀切且无可厚非", url: "https://files.catbox.moe/1fp6eg.mp3"
-                },
-                {
-                    title: "特别的人", sub: "我们是对方特别的人", url: "https://files.catbox.moe/a0n0l7.mp3"
-                },
-                {
-                    title: "麦恩莉", sub: "在广阔寂寞漩涡解脱", url: "https://files.catbox.moe/2inae2.mp3"
-                },
-                {
-                    title: "会呼吸的痛", sub: "想念是会呼吸的痛", url: "https://files.catbox.moe/0uhmxr.mp3"
-                },
-                {
-                    title: "一生的爱", sub: "我只想要给你我一生的爱", url: "https://files.catbox.moe/f0e93c.mp3"
-                },
-                {
-                    title: "身骑白马", sub: "追赶要我爱的不保留", url: "https://files.catbox.moe/iywfe2.mp3"
-                },
-                {
-                    title: "爱情讯息", sub: "想念变成空气在叹息", url: "https://files.catbox.moe/4dl0t2.mp3"
-                },
-                {
-                    title: "你在 不在", sub: "你在我心里面 陪我失眠", url: "https://files.catbox.moe/povyqa.mp3"
-                },
-                {
-                    title: "你是我的风景", sub: "爱让悬崖变平地", url: "https://files.catbox.moe/fnwtf8.mp3"
-                },
-                {
-                    title: "life with u", sub: "Now I know that you're the one", url: "https://files.catbox.moe/zqfxvd.mp3"
-                },
-                {
-                    title: "勾指起誓", sub: "你是理所当然的奇迹", url: "https://files.catbox.moe/4spgo5.mp3"
-                },
-                {
-                    title: "牵一半", sub: "你的存在是我唯一依赖", url: "https://files.catbox.moe/bk21gu.mp3"
-                },
-                {
-                    title: "rove", sub: "Oh we are in the War of Love on Rove", url: "https://files.catbox.moe/sfwsuk.mp3"
-                },
-                {
-                    title: "唯一", sub: "我真的爱你 句句不轻易", url: "https://files.catbox.moe/69g4fe.mp3"
-                },
-            { title: "致爱 Your Song", sub: "我只想每个落日 身边都有你", url: "https://files.catbox.moe/01bmnf.mp3" },
-            { title: "一首想不通的古风", sub: "画地为牢 画命为符 铸成下一世坚守", url: "https://files.catbox.moe/9b4lh7.mp3" },
-            { title: "茉莉雨", sub: "琴声里愁几许关于你", url: "https://files.catbox.moe/7ml83u.mp3" },
-            { title: "怎么唱情歌", sub: "海 变的苦涩 灼伤一片温柔", url: "https://files.catbox.moe/isqax9.mp3" },
-            { title: "岸边客", sub: "你回来我心未改 你不在我还等待", url: "https://files.catbox.moe/9oud6s.mp3" },
-            { title: "江南雪", sub: "相思再无药解 从此万般风月都是我心结", url: "https://files.catbox.moe/hhjwek.mp3" },
-            { title: "不死之身", sub: "我仍爱你爱得不知天高地厚", url: "https://files.catbox.moe/g960ev.mp3" },
-            { title: "我们的明天", sub: "爱从不曾保留 才勇敢了我", url: "https://files.catbox.moe/a3yjvv.mp3" },
-            { title: "难解", sub: "点炷高香敬予神明 被人嘲笑矢志不渝", url: "https://files.catbox.moe/1u8m3r.mp3" },
-            { title: "最好的我 & 50 Feet", sub: "试着伸手 却连你的影子我都无法靠近", url: "https://files.catbox.moe/clsiyi.mp3" },
-            { title: "同手同脚", sub: "也是存在在这个世界 唯一的唯一", url: "https://files.catbox.moe/b8hss3.mp3" },
-            { title: "同花顺", sub: "只要肯爱得深 是不是就有这可能", url: "https://files.catbox.moe/28mw5d.mp3" },
-            { title: "轻舞", sub: "轻舞吧 过往如裙纱", url: "https://files.catbox.moe/8n9lhi.mp3" },
-            { title: "绝对占有 相对自由", sub: "赞美你包容你都是我的使命", url: "https://files.catbox.moe/zi4gxo.mp3" },
-            { title: "千万次想象", sub: "我千万次想象 千万次模仿 思念的形状", url: "https://files.catbox.moe/4jtex8.mp3" },
-            { title: "辞家千里", sub: "穿过无人问津去见山海万顷", url: "https://files.catbox.moe/2quy44.mp3" },
-            { title: "Ryukyuvania", sub: "----", url: "https://files.catbox.moe/utmbqp.mp3" },
-            { title: "沦陷", sub: "圈它在黑暗中逃不出的梦魇", url: "https://files.catbox.moe/0bhl3i.mp3" },
-            { title: "晚枫歌", sub: "你又怎知我从未放手", url: "https://files.catbox.moe/xhwrwy.mp3" },
-            { title: "I Need U", sub: "I need you girl", url: "https://files.catbox.moe/v1k4h8.mp3" },
-            { title: "若梦", sub: "日升月落 此生依旧难舍", url: "https://files.catbox.moe/6uysqy.mp3" },
-            { title: "爱人", sub: "可是恨的人没死成 爱的人没可能", url: "https://files.catbox.moe/wtbdxe.mp3" },
-            { title: "星河叹", sub: "我盼孤身纵马 笛声漫天 四海任我游", url: "https://files.catbox.moe/de7g2m.mp3" },
-            { title: "爱殇", sub: "假欢畅 又何妨 无人共享", url: "https://files.catbox.moe/or2hm7.mp3" },
-            { title: "Una mattina", sub: "----", url: "https://files.catbox.moe/nf8o90.mp3" },
-            { title: "顺其自然", sub: "You light up my heart", url: "https://files.catbox.moe/na01cn.mp3" },
-            { title: "初见", sub: "若如初见 为谁而归", url: "https://files.catbox.moe/bumolx.mp3" },
-            { title: "我好像在哪见过你", sub: "人们把难言的爱都埋入土壤里", url: "https://files.catbox.moe/vcidpc.mp3" },
-            { title: "别回头", sub: "爱是年少时不堪其重 渗透灵魂的一阵剧痛", url: "https://files.catbox.moe/h1hwo5.mp3" },
-            { title: "大鱼", sub: "怕你飞远去 怕你离我而去", url: "https://files.catbox.moe/jlcvkg.mp3" },
-            { title: "人鱼的眼泪", sub: "Baby Don't cry", url: "https://files.catbox.moe/40fm4j.mp3" },
-            { title: "九张机", sub: "我愿化作望断天涯那一方青石", url: "https://files.catbox.moe/hql6w5.mp3" },
-            { title: "梦幻诛仙", sub: "来世若再会还与你双双对对", url: "https://files.catbox.moe/r6btwp.mp3" },
-            { title: "寻常歌", sub: "所幸不过是 寻常人间事", url: "https://files.catbox.moe/ntcqvr.mp3" },
-{ title: "公示情书", sub: "有种微妙确定的幸福 叫对方正在输入", url: "https://files.catbox.moe/rptwer.mp3" },
-{ title: "现在那边是几点", sub: "请问你现在那边是几点 会不会还放有我的照片", url: "https://files.catbox.moe/icv2aa.mp3" },
-{ title: "情人", sub: "气氛开始升温 危险又迷人", url: "https://files.catbox.moe/iqairg.mp3" },
-{ title: "怜悯", sub: "我要带着爱意着恨你", url: "https://files.catbox.moe/242a1h.mp3" },
-{ title: "疑心病", sub: "你终于说出口你对我感情也很重", url: "https://files.catbox.moe/jc1umm.mp3" },
-{ title: "诀爱", sub: "若灵魂相结在天地之间", url: "https://files.catbox.moe/quqaws.mp3" },
-{ title: "彼岸", sub: "她捧起镜花水月 一刹那湮灭", url: "https://files.catbox.moe/zxepep.mp3" },
-{ title: "问情", sub: "当爱恨如潮生多残忍", url: "https://files.catbox.moe/erds0n.mp3" },
-{ title: "同进退", sub: "我会牵着你手同进退 佛前立誓不后悔", url: "https://files.catbox.moe/vb6chf.mp3" },
-{ title: "招摇", sub: "一句此生不换", url: "https://files.catbox.moe/oc86ih.mp3" },
-{ title: "你要的全拿走", sub: "好聚好散听着也楚楚可怜", url: "https://files.catbox.moe/ok2e3s.mp3" },
-{ title: "云裳羽衣曲", sub: "故事鲜艳而缘分却太浅", url: "https://files.catbox.moe/njnbhv.mp3" },
-{ title: "大梦归离", sub: "终于听风儿说 知道你在哪里", url: "https://files.catbox.moe/5z67vs.mp3" },
-{ title: "偏向", sub: "为何会两败俱伤", url: "https://files.catbox.moe/i37f39.mp3" },
-{ title: "Love me like you do", sub: "You're the only thing I wanna touch", url: "https://files.catbox.moe/arym0i.mp3" },
-{ title: "Not snow,but U", sub: "我期待的不是雪而是有你的冬天", url: "https://files.catbox.moe/6rk4gw.mp3" },
-{ title: "The Evergreen", sub: "我恍然明了我所需的一切已尽数摆在眼前", url: "https://files.catbox.moe/ca3rim.mp3" },
-{ title: "冥河螺旋", sub: "我如此希望 我伴你左右", url: "https://files.catbox.moe/xtj8db.mp3" },
-{ title: "熄灭", sub: "你总问我在一起会不会感到厌倦", url: "https://files.catbox.moe/wnzxou.mp3" },
-{ title: "爱人错过", sub: "我肯定在几百年前就说过爱你", url: "https://files.catbox.moe/q2nx16.mp3" },
-{ title: "我想念", sub: "我想念你说过的那种永远", url: "https://files.catbox.moe/3qxads.mp3" },
-{ title: "此生不换", sub: "再有一万年深情也不变", url: "https://files.catbox.moe/72ik88.mp3" },
-{ title: "鳥の詩", sub: "----", url: "https://files.catbox.moe/966u00.mp3" }
-
-    ];
+    }];
 
     const uploadCoverBtn = document.getElementById('upload-cover-btn');
     const coverInput = document.getElementById('cover-input');
@@ -2130,6 +1984,23 @@ playlist.style.top = (rect.top + (player.classList.contains('collapsed') ? 65 : 
     loadSong(0);
     renderPlaylist();
     setupDrag();
+
+    const closePlayerBtn = document.getElementById('close-player-btn');
+    if (closePlayerBtn) {
+        closePlayerBtn.addEventListener('click', () => {
+            settings.musicPlayerEnabled = false;
+            throttledSaveData();
+            player.classList.remove('visible');
+            if (audio && !audio.paused) {
+                audio.pause();
+                isPlaying = false;
+                document.getElementById('icon-play').style.display = 'block';
+                document.getElementById('icon-pause').style.display = 'none';
+                player.classList.remove('playing');
+            }
+            showNotification('音乐播放器已关闭', 'info');
+        });
+    }
 
     if (settings.musicPlayerEnabled) {
         player.classList.add('visible');
