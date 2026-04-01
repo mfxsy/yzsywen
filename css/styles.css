@@ -10682,7 +10682,7 @@
     border: none;
     background: rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(8px);
-    color: rgba(255, 255, 255, 0.75);
+    color:var(--text-primary);
     cursor: pointer;
     display: flex;
     align-items: center;
