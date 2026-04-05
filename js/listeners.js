@@ -78,6 +78,17 @@ if (target.classList.contains('delete-btn')) {
     if (confirm('确定要删除这条消息吗？')) {
         const index = messages.findIndex(m => m.id === messageId);
         if (index > -1) {
+             // 判断删除的是否为“我方最新消息”
+            const isLatestUserMsg = (index === messages.length - 1) && messages[index].sender === 'user';
+            if (isLatestUserMsg) {
+                if (window._pendingReplyTimer) {
+                    clearTimeout(window._pendingReplyTimer);
+                    window._pendingReplyTimer = null;
+                }
+                const tiWrapper = document.getElementById('typing-indicator-wrapper');
+                if (tiWrapper) tiWrapper.style.display = 'none';
+                window._replySuspended = true;
+            }
             const savedScrollTop = DOMElements.chatContainer.scrollTop;
             messages.splice(index, 1); 
             throttledSaveData(); 
@@ -454,37 +465,7 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
             if (_dataSettingsEl) _dataSettingsEl.addEventListener('click', () => {
                 hideModal(DOMElements.settingsModal.modal);
                 showModal(DOMElements.dataModal.modal);
-                (async function calcDmStorage() {
-                    try {
-                        let total = 0, msgsSize = 0, settingsSize = 0, mediaSize = 0;
-                        const keys = await localforage.keys();
-                        for (const k of keys) {
-                            const raw = await localforage.getItem(k);
-                            const str = typeof raw === 'string' ? raw : JSON.stringify(raw);
-                            const bytes = new Blob([str]).size;
-                            total += bytes;
-                            if (/messages|msgs/i.test(k)) msgsSize += bytes;
-                            else if (/avatar|image|photo|bg|background|wallpaper/i.test(k)) mediaSize += bytes;
-                            else settingsSize += bytes;
-                        }
-                        const fmt = b => b > 1048576 ? (b/1048576).toFixed(1)+'MB' : b > 1024 ? (b/1024).toFixed(0)+'KB' : b+'B';
-                        const MAX = 5 * 1024 * 1024;
-                        const pct = Math.min(100, Math.round(total / MAX * 100));
-                        const barEl = document.getElementById('dm-storage-bar');
-                        const totalEl = document.getElementById('dm-storage-total');
-                        if (barEl) barEl.style.width = pct + '%';
-                        if (totalEl) totalEl.textContent = fmt(total);
-                        const msgsEl = document.getElementById('dm-stat-msgs');
-                        const setEl = document.getElementById('dm-stat-settings');
-                        const medEl = document.getElementById('dm-stat-media');
-                        if (msgsEl) msgsEl.textContent = fmt(msgsSize);
-                        if (setEl) setEl.textContent = fmt(settingsSize);
-                        if (medEl) medEl.textContent = fmt(mediaSize);
-                    } catch(e) {
-                        const totalEl = document.getElementById('dm-storage-total');
-                        if (totalEl) totalEl.textContent = '无法读取';
-                    }
-                })();
+                // 存储统计会在 data.js 的 onModalOpen 中自动更新，无需额外代码
             });
             const exportChatBtnDm = document.getElementById('export-chat-btn');
             const importChatBtnDm = document.getElementById('import-chat-btn');
@@ -2334,10 +2315,10 @@ window.toggleCollapsedExtras = function() {
             extra.addEventListener('click', (e) => { e.stopPropagation(); primary.click(); });
         }
     }
+    // 只绑定保留的按钮（combo-btn-extra 对应表情/拍一拍）
     wireExtra('combo-btn-extra', 'combo-btn');
-    wireExtra('batch-btn-extra', 'batch-btn');
+    // batch-btn-extra 已被删除，无需绑定
 };
-
 window.exitCollapseMode = function() {
     if (typeof settings !== 'undefined') settings.bottomCollapseMode = false;
     _applyCollapseState(false);
