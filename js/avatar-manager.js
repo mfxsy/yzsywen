@@ -153,8 +153,8 @@
                 input.onchange = function(e) {
                     const file = e.target.files[0];
                     if (!file) return;
-                    if (file.size > 2 * 1024 * 1024) {
-                        showToast('图片不能超过10MB', 'error');
+                    if (file.size > 20 * 1024 * 1024) {
+                        showToast('图片不能超过20MB', 'error');
                         return;
                     }
                     const reader = new FileReader();
@@ -196,8 +196,8 @@
             input.onchange = function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                if (file.size > 2 * 1024 * 1024) {
-                    showToast('图片不能超过10MB', 'error');
+                if (file.size > 20 * 1024 * 1024) {
+                    showToast('图片不能超过20MB', 'error');
                     return;
                 }
                 const reader = new FileReader();
