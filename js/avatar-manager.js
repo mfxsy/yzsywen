@@ -59,7 +59,7 @@
         },
         applyBg: function() {
             if (chatBg) {
-                document.documentElement.style.setProperty('--chat-bg-image', `url(${chatBg})`);
+                document.documentElement.style.setProperty('--chat-bg-image', 'url("' + chatBg + '")');
                 document.body.classList.add('with-background');
             } else {
                 document.documentElement.style.removeProperty('--chat-bg-image');
@@ -153,8 +153,8 @@
                 input.onchange = function(e) {
                     const file = e.target.files[0];
                     if (!file) return;
-                    if (file.size > 20 * 1024 * 1024) {
-                        showToast('图片不能超过20MB', 'error');
+                    if (file.size > 10 * 1024 * 1024) {
+                        showToast('图片不能超过10MB', 'error');
                         return;
                     }
                     const reader = new FileReader();
@@ -196,18 +196,17 @@
             input.onchange = function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                if (file.size > 20 * 1024 * 1024) {
-                    showToast('图片不能超过20MB', 'error');
+                if (file.size > 10 * 1024 * 1024) {
+                    showToast('图片不能超过10MB', 'error');
                     return;
                 }
-                const reader = new FileReader();
-                reader.onload = function(ev) {
-                    const dataUrl = ev.target.result;
-                    window.avatarManager.setChatBg(dataUrl);
-                    renderPanel();
-                    showToast('背景已更新', 'success');
-                };
-                reader.readAsDataURL(file);
+
+
+                // ✨ 核心修改：不用 FileReader 转 Base64，而是直接生成临时的浏览器内存地址
+                const objectUrl = URL.createObjectURL(file);
+                window.avatarManager.setChatBg(objectUrl);
+                renderPanel();
+                showToast('背景已更新', 'success');
             };
             input.click();
         });
