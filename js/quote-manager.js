@@ -7,6 +7,9 @@
     let quotedMessage = null;
     let chatArea = null;
 
+    // 全局唯一按钮引用
+    window._quoteBtn = null;
+
     // ★ 使用全局安全存储与防御性键生成，并增加 localStorage 备用
     async function loadSettings() {
         let data = null;
@@ -59,15 +62,27 @@
         // 事件监听由 listeners.js 统一处理
     }
 
-    // ---------- 显示引用按钮（纯图标，尺寸同底部按钮） ----------
+    // ---------- 清除当前引用按钮 ----------
+    function clearQuoteButton() {
+        if (window._quoteBtn) {
+            window._quoteBtn.remove();
+            window._quoteBtn = null;
+        }
+        // 移除可能残留的 document 监听器（通过标志控制）
+        if (window._quoteCleaner) {
+            document.removeEventListener('click', window._quoteCleaner);
+            window._quoteCleaner = null;
+        }
+    }
+
+    // ---------- 显示引用按钮（纯图标，尺寸为 1/4） ----------
     function showQuoteButton(row) {
-        // 移除之前可能残留的按钮
-        const oldBtn = document.querySelector('.quote-action-btn');
-        if (oldBtn) oldBtn.remove();
+        // 先清除旧按钮
+        clearQuoteButton();
 
         const msgId = row.dataset.msgId;
         const msg = window.messages.find(m => String(m.id) === String(msgId));
-        if (!msg) return;
+        if (!msg) return; // 找不到消息则不显示
 
         const bubble = row.querySelector('.msg-bubble');
         if (!bubble) return;
@@ -78,7 +93,9 @@
         const btn = document.createElement('button');
         btn.className = 'quote-action-btn';
         btn.innerHTML = '<i class="fas fa-reply"></i>';
-        const size = 20; // 与底部 btn-icon 尺寸一致
+        
+        // ★ 缩小到原尺寸的 1/4（38 → 10）
+        const size = 22; 
         btn.style.cssText = `
             position: fixed;
             z-index: 999;
@@ -87,36 +104,36 @@
             border: none;
             background: var(--wechat-green);
             color: #fff;
-            font-size: 10px;
+            font-size: 12px;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
             display: flex;
             align-items: center;
             justify-content: center;
             transition: transform 0.15s;
+            padding: 0;
             top: ${rect.top + rect.height/2 - size/2}px;
-            ${isSent ? `left: ${rect.left - size - 10}px;` : `left: ${rect.right + 10}px;`}
+            ${isSent ? `left: ${rect.left - size - 6}px;` : `left: ${rect.right + 6}px;`}
         `;
         document.body.appendChild(btn);
+        window._quoteBtn = btn;
 
-        // 点击按钮触发引用，并清理
-        const removeHandler = function(e) {
-            if (!e.target.closest('.quote-action-btn')) {
-                const btnEl = document.querySelector('.quote-action-btn');
-                if (btnEl) btnEl.remove();
-                document.removeEventListener('click', removeHandler);
-            }
-        };
+        // 点击按钮触发引用，并自动清理
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
-            document.removeEventListener('click', removeHandler);
-            this.remove();
+            clearQuoteButton();
             showQuote(msg);
         });
 
-        // 延迟挂载点击外部清理，避免触发当前点击
+        // 点击页面其他区域时清除按钮（延迟绑定，避免立即触发）
+        const cleaner = function(e) {
+            if (!e.target.closest('.quote-action-btn')) {
+                clearQuoteButton();
+            }
+        };
+        window._quoteCleaner = cleaner;
         setTimeout(() => {
-            document.addEventListener('click', removeHandler);
+            document.addEventListener('click', cleaner);
         }, 0);
     }
 
@@ -167,6 +184,8 @@
         const quoteBar = document.getElementById('quoteBar');
         if (quoteBar) quoteBar.style.display = 'none';
         quotedMessage = null;
+        // 同时清除引用按钮
+        clearQuoteButton();
 
         // 恢复聊天区域底部间距
         if (typeof window.updateChatPadding === 'function') {
@@ -182,13 +201,13 @@
     window.quoteManager = {
         getEnabled,
         setEnabled,
-        initClickQuote,      // ★ 替换原有的 initLongPress
-        showQuoteButton,     // ★ 新增：显示气泡旁的引用按钮
+        initClickQuote,
+        showQuoteButton,
         showQuote,
         clearQuote,
         getQuotedMessage,
         loadSettings,
     };
 
-    console.log('✅ quoteManager 已加载，改为单击+按钮触发模式');
+    console.log('✅ quoteManager 已加载，单击+按钮模式，按钮尺寸缩小为1/4，修复切换消息失效问题');
 })();
