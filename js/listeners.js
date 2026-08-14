@@ -2,41 +2,50 @@
 
 function setupEventListeners() {
     const DOM = window.DOM;
+    if (!DOM) return;
 
-    // 发送按钮
-    DOM.sendBtn.addEventListener('click', function() {
-        const text = DOM.msgInput.value;
-        if (text.trim()) {
-            window.sendMessage(text);
-            DOM.msgInput.value = '';
-            DOM.msgInput.style.height = 'auto';
-        }
-    });
+    // --- 发送按钮 ---
+    if (DOM.sendBtn) {
+        DOM.sendBtn.addEventListener('click', function() {
+            const text = DOM.msgInput ? DOM.msgInput.value : '';
+            if (text.trim()) {
+                window.sendMessage(text);
+                if (DOM.msgInput) {
+                    DOM.msgInput.value = '';
+                    DOM.msgInput.style.height = 'auto';
+                }
+            }
+        });
+    }
 
-    // 输入框回车发送
-    DOM.msgInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            DOM.sendBtn.click();
-        }
-    });
+    // --- 输入框回车发送 ---
+    if (DOM.msgInput) {
+        DOM.msgInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (DOM.sendBtn) DOM.sendBtn.click();
+            }
+        });
+        DOM.msgInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+            updateChatPadding();
+        });
+    }
 
-    // 输入框高度自适应
-    DOM.msgInput.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = Math.min(this.scrollHeight, 100) + 'px';
-        updateChatPadding();
-    });
+    // --- 主题切换 ---
+    if (DOM.themeToggle) {
+        DOM.themeToggle.addEventListener('click', window.toggleTheme);
+    }
 
-    // 主题切换
-    DOM.themeToggle.addEventListener('click', window.toggleTheme);
+    // --- 设置按钮 ---
+    if (DOM.settingsBtn) {
+        DOM.settingsBtn.addEventListener('click', function() {
+            if (DOM.settingsPanel) DOM.settingsPanel.classList.add('open');
+        });
+    }
 
-    // 设置按钮
-    DOM.settingsBtn.addEventListener('click', function() {
-        DOM.settingsPanel.classList.add('open');
-    });
-
-    // 所有面板的关闭按钮
+    // --- 所有面板的关闭按钮 ---
     document.querySelectorAll('.panel-overlay .close-panel').forEach(btn => {
         btn.addEventListener('click', function() {
             const panel = this.closest('.panel-overlay');
@@ -44,31 +53,31 @@ function setupEventListeners() {
         });
     });
 
-    // 点击面板外部关闭
+    // --- 点击面板外部关闭 ---
     document.querySelectorAll('.panel-overlay').forEach(panel => {
         panel.addEventListener('click', function(e) {
             if (e.target === panel) panel.classList.remove('open');
         });
     });
 
-    // 设置面板内子菜单
+    // --- 设置面板内子菜单 ---
     document.querySelectorAll('#settingsContent .settings-entry').forEach(btn => {
         btn.addEventListener('click', function() {
             const action = this.dataset.action;
-            DOM.settingsPanel.classList.remove('open');
+            if (DOM.settingsPanel) DOM.settingsPanel.classList.remove('open');
             switch (action) {
                 case 'session':
-                    window.sessionManager.renderSessionList('sessionListContainer');
-                    DOM.sessionPanel.classList.add('open');
+                    if (window.sessionManager) window.sessionManager.renderSessionList('sessionListContainer');
+                    if (DOM.sessionPanel) DOM.sessionPanel.classList.add('open');
                     break;
                 case 'backup':
-                    DOM.backupPanel.classList.add('open');
+                    if (DOM.backupPanel) DOM.backupPanel.classList.add('open');
                     break;
                 case 'cards':
                     if (window.cardManager) window.cardManager.openPanel();
                     break;
                 case 'message':
-                    DOM.messageSettingsPanel.classList.add('open');
+                    if (DOM.messageSettingsPanel) DOM.messageSettingsPanel.classList.add('open');
                     break;
                 default:
                     break;
@@ -76,29 +85,32 @@ function setupEventListeners() {
         });
     });
 
-    // 消息设置内的子菜单
+    // --- 消息设置内的子菜单 ---
     document.querySelectorAll('#messageSettingsContent .settings-entry').forEach(btn => {
         btn.addEventListener('click', function() {
             const action = this.dataset.action;
-            DOM.messageSettingsPanel.classList.remove('open');
+            if (DOM.messageSettingsPanel) DOM.messageSettingsPanel.classList.remove('open');
             
             if (action === 'interact') {
-                DOM.interactSettingsPanel.classList.add('open');
+                if (DOM.interactSettingsPanel) DOM.interactSettingsPanel.classList.add('open');
             } else if (action === 'avatar') {
                 if (window.avatarManager) window.avatarManager.openPanel();
             } else if (action === 'frequency') {
                 if (window.frequencyManager) {
                     window.frequencyManager.initUI();
                 }
-                DOM.frequencySettingsPanel.classList.add('open');
+                if (DOM.frequencySettingsPanel) DOM.frequencySettingsPanel.classList.add('open');
             } else if (action === 'nickname') {
                 openNicknamePanel();
             }
         });
     });
 
-    // 昵称保存
-    document.getElementById('saveNicknameBtn').addEventListener('click', saveNickname);
+    // --- 昵称保存 ---
+    const saveNicknameBtn = document.getElementById('saveNicknameBtn');
+    if (saveNicknameBtn) {
+        saveNicknameBtn.addEventListener('click', saveNickname);
+    }
     document.querySelectorAll('#nicknamePanel input').forEach(input => {
         input.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
@@ -108,7 +120,7 @@ function setupEventListeners() {
         });
     });
 
-    // 通知开关
+    // --- 通知开关 ---
     const notifToggle = document.getElementById('notificationToggle');
     if (notifToggle) {
         notifToggle.checked = window.notificationEnabled;
@@ -121,7 +133,7 @@ function setupEventListeners() {
         });
     }
 
-    // 引用回复开关
+    // --- 引用回复开关 ---
     const quoteToggle = document.getElementById('quoteToggle');
     const timestampToggle = document.getElementById('timestampToggle');
     const noReplyToggle = document.getElementById('noReplyToggle');
@@ -150,52 +162,61 @@ function setupEventListeners() {
         });
     }
 
-    // 长按引用（quote-manager已处理）
-    if (window.quoteManager) {
+    // --- 长按引用 ---
+    if (window.quoteManager && DOM.chatArea && DOM.msgInput) {
         window.quoteManager.initLongPress(DOM.chatArea, DOM.msgInput);
     }
 
-    // 表情按钮
-    DOM.emojiBtn.addEventListener('click', function() {
-        if (window.emojiManager) window.emojiManager.openPanel();
-        else showToast('表情模块未加载', 'error');
-    });
+    // --- 表情按钮 ---
+    if (DOM.emojiBtn) {
+        DOM.emojiBtn.addEventListener('click', function() {
+            if (window.emojiManager) window.emojiManager.openPanel();
+            else showToast('表情模块未加载', 'error');
+        });
+    }
 
-    // 通话按钮
-    DOM.callBtn.addEventListener('click', function() {
-        if (window.callManager) {
-            if (window.callManager.getState && window.callManager.getState() === 'idle') {
-                window.callManager.startCall && window.callManager.startCall();
+    // --- 通话按钮 ---
+    if (DOM.callBtn) {
+        DOM.callBtn.addEventListener('click', function() {
+            if (window.callManager) {
+                if (window.callManager.getState && window.callManager.getState() === 'idle') {
+                    if (window.callManager.startCall) window.callManager.startCall();
+                }
             }
-        }
-    });
+        });
+    }
 
-    // 点击联系人名称修改昵称
-    DOM.contactName.addEventListener('click', async function() {
-        const newName = prompt('修改对方昵称：', window.partnerName);
-        if (newName !== null && newName.trim()) {
-            window.partnerName = newName.trim();
-            DOM.contactName.textContent = window.partnerName;
+    // --- 点击联系人名称修改昵称 ---
+    if (DOM.contactName) {
+        DOM.contactName.addEventListener('click', async function() {
+            const newName = prompt('修改对方昵称：', window.partnerName);
+            if (newName !== null && newName.trim()) {
+                window.partnerName = newName.trim();
+                DOM.contactName.textContent = window.partnerName;
+                await saveMessages();
+                renderMessages();
+                showToast('昵称已更新', 'success');
+            }
+        });
+    }
+
+    // --- 新建会话 ---
+    const createSessionBtn = document.getElementById('createSessionBtn');
+    if (createSessionBtn) {
+        createSessionBtn.addEventListener('click', async function() {
+            const name = prompt('请输入新会话名称：', '我的会话');
+            if (name === null) return;
+            await window.sessionManager.createAndSwitch(name.trim() || '会话');
+            window.SESSION_ID = window.sessionManager.getCurrentSessionId();
+            window.messages = [];
             await saveMessages();
             renderMessages();
-            showToast('昵称已更新', 'success');
-        }
-    });
+            if (DOM.sessionPanel) DOM.sessionPanel.classList.remove('open');
+            showToast('新会话已创建', 'success');
+        });
+    }
 
-    // 新建会话
-    document.getElementById('createSessionBtn').addEventListener('click', async function() {
-        const name = prompt('请输入新会话名称：', '我的会话');
-        if (name === null) return;
-        await window.sessionManager.createAndSwitch(name.trim() || '会话');
-        window.SESSION_ID = window.sessionManager.getCurrentSessionId();
-        window.messages = [];
-        await saveMessages();
-        renderMessages();
-        DOM.sessionPanel.classList.remove('open');
-        showToast('新会话已创建', 'success');
-    });
-
-    // 监听会话切换事件（由 sessionManager 触发）
+    // --- 监听会话切换事件 ---
     document.addEventListener('sessionChanged', async function(e) {
         window.SESSION_ID = e.detail.sessionId;
         window.sessionList = window.sessionManager.getSessionList();
@@ -217,7 +238,7 @@ function setupEventListeners() {
             window.messages = [];
             await saveMessages();
         }
-        DOM.contactName.textContent = window.partnerName;
+        if (DOM.contactName) DOM.contactName.textContent = window.partnerName;
         renderMessages();
         if (window.cardManager) window.cardManager.reload();
         if (window.emojiManager) window.emojiManager.reload();
@@ -225,17 +246,17 @@ function setupEventListeners() {
         showToast('已切换会话', 'success');
     });
 
-    // Ctrl+Enter 发送
+    // --- Ctrl+Enter 发送 ---
     document.addEventListener('keydown', function(e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            if (document.activeElement === DOM.msgInput) {
+            if (document.activeElement === DOM.msgInput && DOM.sendBtn) {
                 e.preventDefault();
                 DOM.sendBtn.click();
             }
         }
     });
 
-    // 点击消息区域查看图片
+    // --- 点击消息区域查看图片 ---
     window._viewImage = function(src) {
         const overlay = document.createElement('div');
         overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;cursor:pointer;animation:fadeIn 0.2s ease;';
@@ -255,16 +276,18 @@ function saveNickname() {
     window.myName = newMy;
     window.partnerName = newPartner;
     saveMessages();
-    DOM.contactName.textContent = window.partnerName;
+    if (DOM.contactName) DOM.contactName.textContent = window.partnerName;
     renderMessages();
-    DOM.nicknamePanel.classList.remove('open');
+    if (DOM.nicknamePanel) DOM.nicknamePanel.classList.remove('open');
     showToast('昵称已更新', 'success');
 }
 
 function openNicknamePanel() {
-    document.getElementById('myNameInput').value = window.myName;
-    document.getElementById('partnerNameInput').value = window.partnerName;
-    DOM.nicknamePanel.classList.add('open');
+    const myNameInput = document.getElementById('myNameInput');
+    const partnerNameInput = document.getElementById('partnerNameInput');
+    if (myNameInput) myNameInput.value = window.myName;
+    if (partnerNameInput) partnerNameInput.value = window.partnerName;
+    if (DOM.nicknamePanel) DOM.nicknamePanel.classList.add('open');
 }
 
 // ---------- 设置加载与保存（添加 localStorage 备用） ----------

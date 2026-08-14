@@ -13,13 +13,14 @@ async function loadMessages() {
         console.warn('加载消息时发生异常，尝试后备恢复:', e);
     }
 
-    // 2. 如果 IndexedDB 读取失败、超时或返回空，尝试从 localStorage 后备恢复
-    if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
+    // 2. 如果 IndexedDB 读取失败、超时、返回空对象或空数组，尝试从 localStorage 后备恢复
+    const isEmptyData = !data || (typeof data === 'object' && (Array.isArray(data) ? data.length === 0 : Object.keys(data).length === 0));
+    if (isEmptyData) {
         try {
             const backupRaw = localStorage.getItem('BACKUP_V1_critical');
             if (backupRaw) {
                 const backup = JSON.parse(backupRaw);
-                if (backup.messages && Array.isArray(backup.messages)) {
+                if (backup.messages && Array.isArray(backup.messages) && backup.messages.length > 0) {
                     data = {
                         messages: backup.messages,
                         partnerName: backup.settings?.partnerName || '梦角',
@@ -37,7 +38,7 @@ async function loadMessages() {
     }
 
     // 3. 如果有数据（无论是从 IndexedDB 还是后备），应用到全局
-    if (data && typeof data === 'object' && data.messages) {
+    if (data && typeof data === 'object' && Array.isArray(data.messages)) {
         window.messages = data.messages || [];
         window.partnerName = data.partnerName || '梦角';
         window.myName = data.myName || '我';
@@ -53,7 +54,7 @@ async function loadMessages() {
         return true;
     }
 
-    // 4. 没有任何数据（初次使用或完全丢失），初始化空数组，但返回 true 防止覆盖
+    // 4. 没有任何数据（初次使用或完全丢失），初始化空数组，但返回 true 防止 app.js 覆盖存储
     window.messages = [];
     window.partnerName = '梦角';
     window.myName = '我';
@@ -97,6 +98,7 @@ function scrollToBottom() {
 
 function renderMessages() {
     const chatArea = DOM.chatArea;
+    if (!chatArea) return;
     const myAv = window.avatarManager ? window.avatarManager.getMyAvatar() : null;
     const partnerAv = window.avatarManager ? window.avatarManager.getPartnerAvatar() : null;
 
@@ -181,6 +183,7 @@ window.renderMessages = renderMessages;
 // 增量追加（用于新消息，避免重绘整个列表）
 function appendMessageDOM(msg) {
     const chatArea = DOM.chatArea;
+    if (!chatArea) return;
     const myAv = window.avatarManager ? window.avatarManager.getMyAvatar() : null;
     const partnerAv = window.avatarManager ? window.avatarManager.getPartnerAvatar() : null;
 
@@ -302,7 +305,7 @@ window.sendMessage = async function(text, image) {
 
 // 更新已读回执
 function updateReadReceipt(msgId) {
-    const row = DOM.chatArea.querySelector(`.msg-row[data-msg-id="${msgId}"]`);
+    const row = DOM.chatArea ? DOM.chatArea.querySelector(`.msg-row[data-msg-id="${msgId}"]`) : null;
     if (row) {
         const statusEl = row.querySelector('.msg-meta .read-status');
         if (statusEl) {
@@ -375,7 +378,7 @@ function triggerReply(fromActive) {
     }
 
     window.isTyping = true;
-    DOM.contactStatus.textContent = '对方正在输入…';
+    if (DOM.contactStatus) DOM.contactStatus.textContent = '对方正在输入…';
 
     let delaySec = 2;
     if (window.frequencyManager) {
@@ -386,7 +389,7 @@ function triggerReply(fromActive) {
 
     window.typingTimer = setTimeout(async () => {
         window.isTyping = false;
-        DOM.contactStatus.textContent = '在线';
+        if (DOM.contactStatus) DOM.contactStatus.textContent = '在线';
 
         let replyText = null;
         let replyImage = null;
@@ -474,7 +477,7 @@ function markAllMyMessagesAsRead() {
         }
     });
     if (changed) {
-        const rows = DOM.chatArea.querySelectorAll('.msg-row.sent');
+        const rows = DOM.chatArea ? DOM.chatArea.querySelectorAll('.msg-row.sent') : [];
         rows.forEach(row => {
             const msgId = row.dataset.msgId;
             if (msgId) {
@@ -496,7 +499,7 @@ function markAllMyMessagesAsRead() {
 window.toggleTheme = function() {
     window.isDark = !window.isDark;
     document.documentElement.setAttribute('data-theme', window.isDark ? 'dark' : '');
-    DOM.themeToggle.innerHTML = window.isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    if (DOM.themeToggle) DOM.themeToggle.innerHTML = window.isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     saveMessages();
 };
 
@@ -523,6 +526,7 @@ function sendNotification() {
 
 // ---------- 7. 更新底部留白 ----------
 function updateChatPadding() {
+    if (!DOM.inputBar || !DOM.chatArea) return;
     const inputBarHeight = DOM.inputBar.offsetHeight;
     let quoteBarHeight = 0;
     const quoteBar = DOM.quoteBar;
@@ -574,14 +578,5 @@ function _backupCriticalData() {
         localStorage.setItem(_BACKUP_PREFIX + 'timestamp', String(Date.now()));
     } catch (e) {
         console.warn('localStorage 备份写入失败:', e);
-    }
-}
-function _tryRecoverFromBackup() {
-    try {
-        const raw = localStorage.getItem(_BACKUP_PREFIX + 'critical');
-        if (!raw) return null;
-        return JSON.parse(raw);
-    } catch (e) {
-        return null;
     }
 }

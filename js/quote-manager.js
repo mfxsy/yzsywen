@@ -63,6 +63,7 @@
         chatArea = container;
         msgInput = inputElement;
 
+        if (!container) return;
         container.addEventListener('touchstart', onTouchStart, { passive: true });
         container.addEventListener('touchend', onTouchEnd, { passive: true });
         container.addEventListener('touchmove', onTouchMove, { passive: true });
@@ -160,18 +161,20 @@
             quoteBar.id = 'quoteBar';
             // 追加到输入栏内部
             const inputBar = document.getElementById('inputBar');
-            inputBar.appendChild(quoteBar); 
+            if (inputBar) inputBar.appendChild(quoteBar); 
         }
         const sender = quotedMsg.sender === 'me' ? '我' : '对方';
         const content = quotedMsg.text || (quotedMsg.image ? '[图片]' : '');
-        quoteBar.innerHTML = `
-            <span>${sender}：${content.substring(0, 50)}${content.length > 50 ? '…' : ''}</span>
-            <button id="clearQuoteBtn" style="background:none;border:none;color:var(--wechat-text-secondary);cursor:pointer;font-size:14px;"><i class="fas fa-times"></i></button>
-        `;
-        quoteBar.style.display = 'flex';
-        document.getElementById('clearQuoteBtn').addEventListener('click', function() {
-            clearQuote();
-        });
+        if (quoteBar) {
+            quoteBar.innerHTML = `
+                <span>${sender}：${content.substring(0, 50)}${content.length > 50 ? '…' : ''}</span>
+                <button id="clearQuoteBtn" style="background:none;border:none;color:var(--wechat-text-secondary);cursor:pointer;font-size:14px;"><i class="fas fa-times"></i></button>
+            `;
+            quoteBar.style.display = 'flex';
+            document.getElementById('clearQuoteBtn').addEventListener('click', function() {
+                clearQuote();
+            });
+        }
         if (msgInput) msgInput.focus();
 
         // 更新聊天区域底部间距

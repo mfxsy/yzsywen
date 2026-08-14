@@ -42,11 +42,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 5. 应用主题
         if (window.isDark) {
             document.documentElement.setAttribute('data-theme', 'dark');
-            DOM.themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            if (DOM.themeToggle) DOM.themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
         }
 
         // 6. 更新界面
-        DOM.contactName.textContent = window.partnerName;
+        if (DOM.contactName) DOM.contactName.textContent = window.partnerName;
         renderMessages();
 
         // 7. 启动主动发送定时器
@@ -56,13 +56,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         }
 
-        // 8. 绑定所有事件
-        setupEventListeners();
-
-        // 9. 更新底部留白
+        // 8. 更新底部留白
         updateChatPadding();
 
-        // 10. 键盘滚动优化
+        // 9. 键盘滚动优化
         let prevInnerHeight = window.innerHeight;
         window.addEventListener('resize', function() {
             if (window.innerHeight > prevInnerHeight) {
@@ -87,12 +84,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         }
 
-        // 11. 定时保存与页面退出保存
+        // 10. 定时保存与页面退出保存
         setInterval(() => saveMessages(), 30000);
         window.addEventListener('beforeunload', () => saveMessages());
 
-        // 12. 聚焦输入框
-        DOM.msgInput.focus();
+        // 11. 聚焦输入框
+        if (DOM.msgInput) DOM.msgInput.focus();
 
         console.log('✅ 应用启动完成，会话ID:', window.SESSION_ID);
 
@@ -100,5 +97,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.error('严重初始化错误，但应用仍可降级运行', e);
         renderMessages();
         showToast('启动时遇到问题，但基本功能可用', 'warning', 4000);
+    } finally {
+        // ★ 极其关键：不论前面的代码有没有报错，都必须强行绑定所有按钮事件，保证不出现“按键失灵”
+        if (typeof setupEventListeners === 'function') {
+            setupEventListeners();
+            console.log('✅ 事件绑定安全执行完成');
+        }
     }
 });
