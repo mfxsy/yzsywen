@@ -2,10 +2,11 @@
 
 // ---------- 1. 数据加载与保存 ----------
 async function loadMessages() {
+    // 使用局部变量暂存，绝不能一上来就清空 window.messages
     let data = null;
     let fromBackup = false;
 
-    // 1. 先尝试从 IndexedDB 读取（带超时保护）
+    // 1. 先尝试从 IndexedDB 读取
     try {
         const key = getStorageKey('chatData');
         data = await safeGetItem(key);
@@ -13,8 +14,8 @@ async function loadMessages() {
         console.warn('加载消息时发生异常，尝试后备恢复:', e);
     }
 
-    // 2. 如果 IndexedDB 读取失败、超时、返回空对象或空数组，尝试从 localStorage 后备恢复
-    const isEmptyData = !data || (typeof data === 'object' && (Array.isArray(data) ? data.length === 0 : Object.keys(data).length === 0));
+    // 2. 如果 IndexedDB 读取失败、返回空，尝试从 localStorage 后备恢复
+    const isEmptyData = !data || (typeof data === 'object' && Object.keys(data).length === 0);
     if (isEmptyData) {
         try {
             const backupRaw = localStorage.getItem('BACKUP_V1_critical');
@@ -37,30 +38,25 @@ async function loadMessages() {
         }
     }
 
-    // 3. 如果有数据（无论是从 IndexedDB 还是后备），应用到全局
-    if (data && typeof data === 'object' && Array.isArray(data.messages)) {
+    // 3. 只有真正拿到了有效数据，才赋值给 window.messages 并返回 true
+    if (data && typeof data === 'object' && Array.isArray(data.messages) && data.messages.length > 0) {
         window.messages = data.messages || [];
         window.partnerName = data.partnerName || '梦角';
         window.myName = data.myName || '我';
         window.isDark = data.isDark || false;
         window.lastMsgId = data.lastMsgId || 0;
 
-        // 如果是从后备恢复的，异步写回 IndexedDB 修复存储
+        // 如果是从后备恢复的，异步写回修复存储
         if (fromBackup) {
             setTimeout(() => {
                 saveMessages().catch(() => {});
             }, 1000);
         }
-        return true;
+        return true; // 表示有数据
     }
 
-    // 4. 没有任何数据（初次使用或完全丢失），初始化空数组，但返回 true 防止 app.js 覆盖存储
-    window.messages = [];
-    window.partnerName = '梦角';
-    window.myName = '我';
-    window.isDark = false;
-    window.lastMsgId = 0;
-    return true;
+    // 4. 返回 false，表示没有有效数据，让 app.js 去初始化空数组
+    return false;
 }
 
 async function saveMessages() {
