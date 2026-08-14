@@ -12,32 +12,40 @@
     let chatArea = null;
     let msgInput = null;
 
-    // ★ 使用全局安全存储与防御性键生成
+    // ★ 使用全局安全存储与防御性键生成，并增加 localStorage 备用
     async function loadSettings() {
+        let data = null;
         try {
             const key = getStorageKey('quoteSettings');
-            const data = await safeGetItem(key);
-            if (data && typeof data.enabled === 'boolean') {
-                isQuoteEnabled = data.enabled;
-            } else {
-                isQuoteEnabled = false;
-                await saveSettings();
-            }
-            console.log('[引用] 加载成功:', isQuoteEnabled);
-        } catch (e) {
-            console.warn('引用设置加载失败，使用默认值:', e);
-            isQuoteEnabled = false;
+            data = await safeGetItem(key);
+        } catch (e) {}
+
+        if (!data || typeof data.enabled !== 'boolean') {
+            try {
+                const raw = localStorage.getItem('quoteSettings_fallback');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (typeof parsed.enabled === 'boolean') {
+                        data = parsed;
+                        console.warn('[quote] 从 localStorage 恢复设置');
+                    }
+                }
+            } catch (e) {}
         }
+
+        isQuoteEnabled = data?.enabled ?? false;
+        await saveSettings();
+        console.log('[引用] 加载成功:', isQuoteEnabled);
     }
 
     async function saveSettings() {
         try {
             const key = getStorageKey('quoteSettings');
             await safeSetItem(key, { enabled: isQuoteEnabled });
-            console.log('[引用] 保存成功:', isQuoteEnabled);
-        } catch (e) {
-            console.warn('保存引用设置失败:', e);
-        }
+        } catch (e) { console.warn('保存引用设置失败:', e); }
+        try {
+            localStorage.setItem('quoteSettings_fallback', JSON.stringify({ enabled: isQuoteEnabled }));
+        } catch (e) {}
     }
 
     async function setEnabled(val) {
@@ -198,5 +206,5 @@
         loadSettings,
     };
 
-    console.log('✅ quoteManager 已加载，等待主程序调用 .loadSettings()');
+    console.log('✅ quoteManager 已加载，包含备用恢复机制');
 })();

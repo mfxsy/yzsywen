@@ -87,7 +87,6 @@ function setupEventListeners() {
             } else if (action === 'avatar') {
                 if (window.avatarManager) window.avatarManager.openPanel();
             } else if (action === 'frequency') {
-                // ★ 关键修正：必须调用 initUI 才能渲染UI并绑定滑动事件
                 if (window.frequencyManager) {
                     window.frequencyManager.initUI();
                 }
@@ -268,55 +267,100 @@ function openNicknamePanel() {
     DOM.nicknamePanel.classList.add('open');
 }
 
-// 时间戳、已读不回等设置加载
+// ---------- 设置加载与保存（添加 localStorage 备用） ----------
+
 async function loadTimestampSetting() {
+    let data = null;
     try {
         const key = getStorageKey('timestampSettings');
-        const data = await safeGetItem(key);
-        if (data && typeof data.enabled === 'boolean') {
-            window.showTimestamp = data.enabled;
-        } else {
-            window.showTimestamp = true;
-        }
-    } catch (e) {
-        window.showTimestamp = true;
+        data = await safeGetItem(key);
+    } catch (e) { /* 忽略 */ }
+
+    if (!data || typeof data.enabled !== 'boolean') {
+        try {
+            const raw = localStorage.getItem('timestampSettings_fallback');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (typeof parsed.enabled === 'boolean') {
+                    data = parsed;
+                    console.warn('[timestamp] 从 localStorage 恢复设置');
+                }
+            }
+        } catch (e) { /* 忽略 */ }
     }
+
+    window.showTimestamp = data?.enabled ?? true;
     await saveTimestampSetting();
 }
 async function saveTimestampSetting() {
     try {
         await safeSetItem(getStorageKey('timestampSettings'), { enabled: window.showTimestamp });
     } catch (e) { console.warn('保存时间戳设置失败:', e); }
+    try {
+        localStorage.setItem('timestampSettings_fallback', JSON.stringify({ enabled: window.showTimestamp }));
+    } catch (e) { /* 忽略 */ }
 }
 
 async function loadNoReplySetting() {
+    let data = null;
     try {
         const key = getStorageKey('noReplySettings');
-        const data = await safeGetItem(key);
-        window.noReplyEnabled = data?.enabled ?? false;
-    } catch (e) {
-        window.noReplyEnabled = false;
+        data = await safeGetItem(key);
+    } catch (e) {}
+
+    if (!data || typeof data.enabled !== 'boolean') {
+        try {
+            const raw = localStorage.getItem('noReplySettings_fallback');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (typeof parsed.enabled === 'boolean') {
+                    data = parsed;
+                    console.warn('[noReply] 从 localStorage 恢复设置');
+                }
+            }
+        } catch (e) {}
     }
+
+    window.noReplyEnabled = data?.enabled ?? false;
     await saveNoReplySetting();
 }
 async function saveNoReplySetting() {
     try {
         await safeSetItem(getStorageKey('noReplySettings'), { enabled: window.noReplyEnabled });
-    } catch (e) { /* ignore */ }
+    } catch (e) { /* 忽略 */ }
+    try {
+        localStorage.setItem('noReplySettings_fallback', JSON.stringify({ enabled: window.noReplyEnabled }));
+    } catch (e) {}
 }
 
 async function loadNotificationSetting() {
+    let data = null;
     try {
         const key = window.APP_PREFIX + 'notificationEnabled';
-        const data = await safeGetItem(key);
-        window.notificationEnabled = data?.enabled ?? false;
-    } catch (e) {
-        window.notificationEnabled = false;
+        data = await safeGetItem(key);
+    } catch (e) {}
+
+    if (!data || typeof data.enabled !== 'boolean') {
+        try {
+            const raw = localStorage.getItem('notificationEnabled_fallback');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (typeof parsed.enabled === 'boolean') {
+                    data = parsed;
+                    console.warn('[notif] 从 localStorage 恢复设置');
+                }
+            }
+        } catch (e) {}
     }
+
+    window.notificationEnabled = data?.enabled ?? false;
     await saveNotificationSetting();
 }
 async function saveNotificationSetting() {
     try {
         await safeSetItem(window.APP_PREFIX + 'notificationEnabled', { enabled: window.notificationEnabled });
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
+    try {
+        localStorage.setItem('notificationEnabled_fallback', JSON.stringify({ enabled: window.notificationEnabled }));
+    } catch (e) {}
 }

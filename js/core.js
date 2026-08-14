@@ -14,7 +14,7 @@ async function loadMessages() {
     }
 
     // 2. 如果 IndexedDB 读取失败、超时或返回空，尝试从 localStorage 后备恢复
-    if (!data) {
+    if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
         try {
             const backupRaw = localStorage.getItem('BACKUP_V1_critical');
             if (backupRaw) {
@@ -37,7 +37,7 @@ async function loadMessages() {
     }
 
     // 3. 如果有数据（无论是从 IndexedDB 还是后备），应用到全局
-    if (data) {
+    if (data && typeof data === 'object' && data.messages) {
         window.messages = data.messages || [];
         window.partnerName = data.partnerName || '梦角';
         window.myName = data.myName || '我';
@@ -53,8 +53,13 @@ async function loadMessages() {
         return true;
     }
 
-    // 4. 只有真正没有任何数据（初次使用）时才返回 false
-    return false;
+    // 4. 没有任何数据（初次使用或完全丢失），初始化空数组，但返回 true 防止覆盖
+    window.messages = [];
+    window.partnerName = '梦角';
+    window.myName = '我';
+    window.isDark = false;
+    window.lastMsgId = 0;
+    return true;
 }
 
 async function saveMessages() {
@@ -70,6 +75,12 @@ async function saveMessages() {
         await safeSetItem(key, data);
     } catch (e) {
         console.warn('保存消息失败:', e);
+    }
+    // 同步写入 localStorage 备用
+    try {
+        _backupCriticalData();
+    } catch (e) {
+        console.warn('备用备份失败:', e);
     }
 }
 window.saveMessages = saveMessages;
@@ -528,7 +539,7 @@ function updateChatPadding() {
 }
 window.updateChatPadding = updateChatPadding;
 
-// ---------- 8. 后备备份与恢复（保留原代码） ----------
+// ---------- 8. 后备备份与恢复 ----------
 const _BACKUP_PREFIX = 'BACKUP_V1_';
 function _backupCriticalData() {
     if (window._skipBackup) return;
@@ -574,9 +585,3 @@ function _tryRecoverFromBackup() {
         return null;
     }
 }
-// 在保存时自动备份
-const originalSaveMessages = saveMessages;
-saveMessages = async function() {
-    await originalSaveMessages();
-    _backupCriticalData();
-};
