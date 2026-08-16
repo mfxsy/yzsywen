@@ -8,6 +8,25 @@
     <meta name="theme-color" content="#000000" />
     <title>传讯·字卡</title>
 
+    <!-- PWA 配置 -->
+<link rel="manifest" href="manifest.json">
+
+<!-- 强制浏览器每次拉取最新代码（防止 GitHub 缓存旧代码） -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+
+<!-- 注册 Service Worker -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log('✅ Service Worker 注册成功'))
+        .catch(() => console.log('⚠️ Service Worker 注册失败'));
+    });
+  }
+</script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600&display=swap" rel="stylesheet" />
