@@ -1,6 +1,6 @@
 {
-  "name": "传讯·字卡",
-  "short_name": "字卡",
+  "name": "遐思语",
+  "short_name": "遐思语",
   "description": "仿微信风格聊天应用",
   "start_url": "index.html",
   "display": "standalone",

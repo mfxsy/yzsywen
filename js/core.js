@@ -743,7 +743,7 @@ function sendNotification() {
         window.notificationTimer = setTimeout(() => {
             const count = window.notificationCount;
             window.notificationCount = 0;
-            const title = '传讯 · 字卡';
+            const title = '遐思语';
             const body = `收到 ${count} 条新消息`;
             try {
                 new Notification(title, { body: body });
