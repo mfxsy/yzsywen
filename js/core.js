@@ -142,15 +142,17 @@ function renderMessages() {
     messagesToRender.forEach((msg) => {
         const dateKey = getDateKey(msg.time);
         if (dateKey !== lastDateKey) {
+            // ★★★ 修复开始：直接用 dateKey 字符串拆分，避免 msg.time 是字符串时调用 .getFullYear() 报错 ★★★
             const label = (() => {
                 const now = new Date();
                 const today = getDateKey(now);
                 const yesterday = getDateKey(new Date(now.getTime() - 86400000));
                 if (dateKey === today) return '今天';
                 if (dateKey === yesterday) return '昨天';
-                const d = msg.time;
-                return d.getFullYear() + '年' + String(d.getMonth() + 1) + '月' + String(d.getDate()) + '日';
+                const parts = dateKey.split('-');
+                return parts[0] + '年' + parts[1] + '月' + parts[2] + '日';
             })();
+            // ★★★ 修复结束 ★★★
             html += `<div class="msg-timestamp">${label}</div>`;
             lastDateKey = dateKey;
         }
@@ -253,15 +255,17 @@ async function loadOlderMessages() {
 
     messagesToPrepend.forEach((msg) => {
         const dateKey = getDateKey(msg.time);
+        // ★★★ 修复开始：同样的日期逻辑替换 ★★★
         const label = (() => {
             const now = new Date();
             const today = getDateKey(now);
             const yesterday = getDateKey(new Date(now.getTime() - 86400000));
             if (dateKey === today) return '今天';
             if (dateKey === yesterday) return '昨天';
-            const d = msg.time;
-            return d.getFullYear() + '年' + String(d.getMonth() + 1) + '月' + String(d.getDate()) + '日';
+            const parts = dateKey.split('-');
+            return parts[0] + '年' + parts[1] + '月' + parts[2] + '日';
         })();
+        // ★★★ 修复结束 ★★★
 
         if (dateKey !== lastDateKey) {
             if (!(messagesToPrepend.indexOf(msg) === 0 && label === existingDate)) {
@@ -365,15 +369,17 @@ function appendMessageDOM(msg) {
 
     const dateKey = getDateKey(msg.time);
     if (dateKey !== window._lastDateKey) {
+        // ★★★ 修复开始：同样的日期逻辑替换 ★★★
         const label = (() => {
             const now = new Date();
             const today = getDateKey(now);
             const yesterday = getDateKey(new Date(now.getTime() - 86400000));
             if (dateKey === today) return '今天';
             if (dateKey === yesterday) return '昨天';
-            const d = msg.time;
-            return d.getFullYear() + '年' + String(d.getMonth() + 1) + '月' + String(d.getDate()) + '日';
+            const parts = dateKey.split('-');
+            return parts[0] + '年' + parts[1] + '月' + parts[2] + '日';
         })();
+        // ★★★ 修复结束 ★★★
         const ts = document.createElement('div');
         ts.className = 'msg-timestamp';
         ts.textContent = label;
